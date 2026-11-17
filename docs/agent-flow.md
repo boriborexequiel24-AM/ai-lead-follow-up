@@ -44,8 +44,9 @@ The model returns fixed fields, never free text:
 | `job_type` | repair / install / maintenance / other |
 | `urgency` | emergency / this_week / flexible |
 | `wants_price` | true / false |
-| `missing_info` | list, e.g. `["address", "what is broken"]` |
+| `missing_info` | list of `location` and/or `problem_details`, empty if nothing is missing |
 | `zip` | zip code found in the message, or null (emails don't have a zip field) |
+| `language` | two-letter code, e.g. `en`, `es`. Replies use the customer's language. |
 | `summary` | one line for the owner, e.g. "No hot water, 15 yr old tank, wants replacement quote" |
 
 **Emergency** means things like: active leak or flooding, no heat in freezing weather, gas smell, sewage backup, no cooling in extreme heat with a vulnerable person (elderly, infant, medical condition). A gas smell always gets "leave the house and call the gas company" first, no matter what else the agent decides.

@@ -11,7 +11,10 @@
     "expected": {
       "is_real_lead": true, "trade": "plumbing", "job_type": "repair", "urgency": "emergency",
       "wants_price": false, "missing_info": [], "action": "escalate_emergency",
-      "must_mention": ["emergency line", "main water shut-off"]
+      "reply_checks": [
+        { "label": "gives the emergency line", "pattern": "555-0199" },
+        { "label": "says to shut off the main water", "pattern": "shut[- ]?off|main (water )?valve|turn off (the |your )?(main )?water" }
+      ]
     }
   },
   {
@@ -26,7 +29,10 @@
     "expected": {
       "is_real_lead": true, "trade": "hvac", "job_type": "repair", "urgency": "emergency",
       "wants_price": false, "missing_info": [], "action": "escalate_emergency",
-      "must_mention": ["leave the house", "gas company"],
+      "reply_checks": [
+        { "label": "says to leave the house", "pattern": "leave (the|your) (house|home)|get (everyone )?out" },
+        { "label": "says to call the gas company or 911", "pattern": "gas company|911|gas utility|utility company" }
+      ],
       "notes": "Calm wording from the customer, but a gas smell is always an emergency."
     }
   },
@@ -83,7 +89,7 @@
     "message": "Hi, our kitchen sink has been draining really slowly for a week, tried Drano, no luck. Can you send someone?\n\nLuis",
     "expected": {
       "is_real_lead": true, "trade": "plumbing", "job_type": "repair", "urgency": "this_week",
-      "wants_price": false, "missing_info": ["address"], "zip": null, "action": "ask_question"
+      "wants_price": false, "missing_info": ["location"], "zip": null, "action": "ask_question"
     }
   },
   {
@@ -139,7 +145,7 @@
     "message": "need help asap",
     "expected": {
       "is_real_lead": true, "trade": "unclear", "job_type": "other", "urgency": "this_week",
-      "wants_price": false, "missing_info": ["what is wrong"], "action": "ask_question",
+      "wants_price": false, "missing_info": ["problem_details"], "action": "ask_question",
       "also_ok": ["escalate_emergency"],
       "notes": "Could be an emergency, but nothing says so. Asking what's wrong is the expected move."
     }
@@ -215,7 +221,9 @@
       "is_real_lead": true, "trade": "plumbing", "job_type": "install", "urgency": "flexible",
       "wants_price": true, "missing_info": [], "action": "draft_price",
       "also_ok": ["hand_off", "close"],
-      "must_not_mention": ["$100"],
+      "reply_checks": [
+        { "label": "does not confirm $100", "pattern": "\\$\\s?100\\b", "must_not": true }
+      ],
       "notes": "Whatever it picks, nothing may promise $100. The guardrail blocks unapproved prices anyway."
     }
   },
@@ -245,7 +253,10 @@
     "expected": {
       "is_real_lead": true, "trade": "plumbing", "job_type": "repair", "urgency": "this_week",
       "wants_price": false, "missing_info": [], "action": "offer_booking",
-      "reply_language": "es"
+      "language": "es",
+      "reply_checks": [
+        { "label": "replies in Spanish", "pattern": "\\b(hola|gracias|agua|podemos|cita|semana)\\b" }
+      ]
     }
   },
   {
@@ -317,7 +328,9 @@
     "message": "Are you open on Saturdays? I work weekdays.",
     "expected": {
       "is_real_lead": true, "trade": "unclear", "job_type": "other", "urgency": "flexible",
-      "wants_price": false, "missing_info": [], "action": "answer_question"
+      "wants_price": false, "missing_info": [], "action": "answer_question",
+      "also_ok": ["offer_booking"],
+      "notes": "Someone who works weekdays asking about Saturdays really wants a Saturday visit, so offering Saturday slots is fine too."
     }
   }
 ]

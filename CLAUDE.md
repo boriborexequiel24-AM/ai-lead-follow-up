@@ -14,7 +14,7 @@ Planning done, nothing built yet. Full plan in [docs/PLAN.md](docs/PLAN.md).
 |---|---|
 | 1. Setup | Done 2026-11-17: repo, docs, `.env`, Supabase `leads` schema (verified via API), Slack app "Lead Assistant" with `#lead-approvals` and `#lead-alerts` (test messages posted), Gmail label `lead-demo`. |
 | 2. Sample data | Done 2026-11-18: company "Copperline Plumbing & Air" (migration + `supabase/seed.sql`, verified via API: 1 profile, 10 FAQ, 16 prices, public key blocked), 22 labelled leads and 7 conversations in `sample-leads/`. |
-| 3. Agent brain + eval | Not started |
+| 3. Agent brain + eval | Done 2026-11-18: prompts and schemas in `agent/`, `scripts/eval_agent.py`. gpt-5.4-mini, 29/29 right actions in two runs, ~$0.003 and ~4.7s per lead turn (docs/agent-eval.md). |
 | 4. Guardrails + conversation loop | Not started |
 | 5. Intake | Not started |
 | 6. Slack | Not started |
@@ -39,7 +39,13 @@ Planning done, nothing built yet. Full plan in [docs/PLAN.md](docs/PLAN.md).
 - **Public demo limits** (decided 2026-11-17). 3 leads per visitor per day (by IP), about 10 visitor messages per thread, a daily cap on total AI calls, and visitor leads deleted after 24 hours.
 
 ## Open questions
-Listed under "Open decisions" in [docs/PLAN.md](docs/PLAN.md): outbound email service, Gmail label, model, and the project name.
+Listed under "Open decisions" in [docs/PLAN.md](docs/PLAN.md): outbound email service, Gmail label, and the project name.
+
+## How the agent works
+- One agent turn is two AI calls plus a rule: **read** (`agent/read_prompt.md` + `read_schema.json`) turns the conversation into fixed facts, a code step checks the zip against the service area, then **decide** (`agent/decide_prompt.md` + `decide_schema.json`) picks one action and writes the reply. Both use the OpenAI Responses API with a strict JSON schema, reasoning effort low.
+- The files in `agent/` are the source of truth. n8n must run exactly these (generated from them, like the invoice project's extraction step), so the eval always tests what runs in production.
+- Inputs are plain JSON objects (company, faq, price_sheet, now, facts, open_slots, conversation) so n8n can build the identical payload.
+- Test with `python scripts/eval_agent.py --models gpt-5.4-mini` (standard library only, no venv needed; reads company data live from Supabase). Run it after any prompt change. Raw results go to `scripts/eval-results/` (gitignored).
 
 ## Tech Stack
 Not decided. Likely reuses what worked in `Real Work Systems/`: n8n (self-hosted) for orchestration, OpenAI for the AI steps (existing credits; keep the provider swappable), Supabase for data, Next.js + Tailwind on Vercel for the dashboard, Slack for alerts and approvals.

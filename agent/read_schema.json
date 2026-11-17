@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["is_real_lead", "trade", "job_type", "urgency", "wants_price", "missing_info", "zip", "language", "summary"],
+  "properties": {
+    "is_real_lead": { "type": "boolean" },
+    "trade": { "type": "string", "enum": ["plumbing", "hvac", "both", "unclear"] },
+    "job_type": { "type": "string", "enum": ["repair", "install", "maintenance", "other"] },
+    "urgency": { "type": "string", "enum": ["emergency", "this_week", "flexible"] },
+    "wants_price": { "type": "boolean" },
+    "missing_info": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["location", "problem_details"] }
+    },
+    "zip": { "type": ["string", "null"] },
+    "language": { "type": "string" },
+    "summary": { "type": "string" }
+  }
+}

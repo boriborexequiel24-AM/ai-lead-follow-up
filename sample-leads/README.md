@@ -12,11 +12,12 @@ The company the agent works for (profile, FAQ, price sheet) is in `supabase/seed
 |---|---|
 | `action` | Must match, or be one of `also_ok`. The main score. |
 | `is_real_lead`, `trade`, `job_type`, `urgency`, `wants_price` | Exact match. |
-| `missing_info` | Every listed item must be reported (wording can differ). |
+| `missing_info` | Every listed item must be reported (`location`, `problem_details`). |
 | `zip` | For emails: the zip pulled from the text, or `null` if there isn't one. |
 | `price_code` | For `draft_price`: which price sheet row it used. |
-| `must_mention` / `must_not_mention` | Checked in the reply text (meaning, not exact words). |
-| `reply_language` | The reply is in this language. |
+| `language` | The language the read step detected. |
+| `reply_checks` | Regex patterns the reply must contain (or must not, with `must_not`). |
+| (every case) | No dollar amount unless drafting a price, no em dashes, and offered slots must be real open slots. |
 
 ## Labelling rules
 When more than one action could fit, the first rule that applies wins:

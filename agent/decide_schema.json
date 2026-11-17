@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action", "reason", "reply", "price_code", "offered_slots", "slot", "end_state", "owner_note"],
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": [
+        "close", "escalate_emergency", "decline", "hand_off", "ask_question",
+        "confirm_booking", "draft_price", "answer_question", "offer_booking"
+      ]
+    },
+    "reason": { "type": "string" },
+    "reply": { "type": "string" },
+    "price_code": { "type": ["string", "null"] },
+    "offered_slots": { "type": "array", "items": { "type": "string" } },
+    "slot": { "type": ["string", "null"] },
+    "end_state": { "type": ["string", "null"], "enum": ["spam", "not_interested", "unsubscribed", "declined", null] },
+    "owner_note": { "type": "string" }
+  }
+}

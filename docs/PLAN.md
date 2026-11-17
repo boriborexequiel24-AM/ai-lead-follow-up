@@ -111,5 +111,4 @@ See the Decisions section in [CLAUDE.md](../CLAUDE.md). In short: plumbing + HVA
 ## Open decisions
 - **Outbound email service.** Send from Gmail through n8n (free, already connected) or a sending service like Resend (cleaner sender address, better for a client story). Either way, an allow-list means mail can only go to addresses Exequiel controls.
 - **Email intake label.** Something no existing filter would ever apply, like `lead-demo`, for the same reason the invoice project uses `invoice-demo`.
-- **Model.** Pick in phase 3 based on the eval.
 - **Project name.** "Lead Capture" is a working name.
