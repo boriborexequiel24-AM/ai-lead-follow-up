@@ -34,12 +34,12 @@ This needs its own Slack app: a Slack app has only one interactivity URL, and th
   {
     "display_information": { "name": "Lead Assistant" },
     "features": { "bot_user": { "display_name": "Lead Assistant", "always_online": true } },
-    "oauth_config": { "scopes": { "bot": ["chat:write", "chat:write.public"] } },
+    "oauth_config": { "scopes": { "bot": ["chat:write", "chat:write.public", "channels:manage", "channels:read"] } },
     "settings": { "org_deploy_enabled": false, "socket_mode_enabled": false, "token_rotation_enabled": false }
   }
   ```
 - [ ] **Install to Workspace**, then copy the bot token (`xoxb-...`) into `SLACK_BOT_TOKEN` and the **Signing Secret** (Basic Information) into `SLACK_SIGNING_SECRET`.
-- [ ] Create `#lead-approvals` (price approvals) and `#lead-alerts` (emergencies and errors), and copy their channel IDs into `.env`.
+- [ ] Create `#lead-approvals` (price approvals) and `#lead-alerts` (emergencies and errors), and copy their channel IDs into `.env`. With the `channels:manage` and `channels:read` scopes, Claude can do this step with the bot token (done this way on 2026-11-17).
 - [ ] Interactivity gets turned on in phase 6, once the approval workflow exists.
 
 ## 5. Gmail

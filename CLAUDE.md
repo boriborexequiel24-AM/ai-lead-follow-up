@@ -12,7 +12,7 @@ Planning done, nothing built yet. Full plan in [docs/PLAN.md](docs/PLAN.md).
 
 | Phase | State |
 |---|---|
-| 1. Setup | In progress: repo, `.env.example`, README and SETUP.md done. Waiting on Exequiel's accounts (Supabase, Slack app, Gmail label). |
+| 1. Setup | In progress. Done: repo, docs, `.env`, Supabase `leads` schema (verified via API), Slack app "Lead Assistant" in the demo workspace with `#lead-approvals` and `#lead-alerts` (test messages posted). Left: Gmail label `lead-demo`, `GMAIL_INTAKE_ADDRESS`, `OUTBOUND_EMAIL_ALLOWLIST`. |
 | 2. Sample data | Not started |
 | 3. Agent brain + eval | Not started |
 | 4. Guardrails + conversation loop | Not started |
