@@ -12,8 +12,8 @@ Planning done, nothing built yet. Full plan in [docs/PLAN.md](docs/PLAN.md).
 
 | Phase | State |
 |---|---|
-| 1. Setup | In progress. Done: repo, docs, `.env`, Supabase `leads` schema (verified via API), Slack app "Lead Assistant" in the demo workspace with `#lead-approvals` and `#lead-alerts` (test messages posted). Left: Gmail label `lead-demo`, `GMAIL_INTAKE_ADDRESS`, `OUTBOUND_EMAIL_ALLOWLIST`. |
-| 2. Sample data | Not started |
+| 1. Setup | Done 2026-11-17: repo, docs, `.env`, Supabase `leads` schema (verified via API), Slack app "Lead Assistant" with `#lead-approvals` and `#lead-alerts` (test messages posted), Gmail label `lead-demo`. |
+| 2. Sample data | In progress: company "Copperline Plumbing & Air" (migration + `supabase/seed.sql`), 22 labelled leads and 7 conversations in `sample-leads/`. Waiting on Exequiel to run the migration and seed in Supabase. |
 | 3. Agent brain + eval | Not started |
 | 4. Guardrails + conversation loop | Not started |
 | 5. Intake | Not started |

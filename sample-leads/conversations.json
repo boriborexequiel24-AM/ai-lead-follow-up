@@ -1,0 +1,73 @@
+[
+  {
+    "id": "C01-picks-a-slot",
+    "lead": { "source": "form", "name": "Hannah Brooks", "email": "hbrooks@mail.example", "zip": "80237" },
+    "turns": [
+      { "from": "lead", "at": "2026-04-22T13:00:00-06:00", "text": "Would like to get the AC checked before summer. Any weekday afternoon works for me." },
+      { "from": "agent", "at": "2026-04-22T13:00:20-06:00", "action": "offer_booking", "offered_slots": ["2026-04-28T13:00:00-06:00", "2026-04-29T15:00:00-06:00", "2026-04-30T13:00:00-06:00"], "text": "Hi Hannah, happy to get your AC tuned up before the heat arrives. We have Tuesday Apr 28 at 1pm, Wednesday Apr 29 at 3pm, or Thursday Apr 30 at 1pm. Which works best?" },
+      { "from": "lead", "at": "2026-04-22T14:10:00-06:00", "text": "Wednesday at 3 is perfect." }
+    ],
+    "expected": { "action": "confirm_booking", "slot": "2026-04-29T15:00:00-06:00" }
+  },
+  {
+    "id": "C02-gives-missing-zip",
+    "lead": { "source": "email", "name": "Luis Alvarez", "email": "luis.alvarez@mail.example" },
+    "turns": [
+      { "from": "lead", "at": "2026-03-04T09:12:00-07:00", "text": "Hi, our kitchen sink has been draining really slowly for a week, tried Drano, no luck. Can you send someone?" },
+      { "from": "agent", "at": "2026-03-04T09:12:30-07:00", "action": "ask_question", "text": "Hi Luis, sorry about the sink. What's your address or zip code, so we can confirm we cover your area?" },
+      { "from": "lead", "at": "2026-03-04T10:02:00-07:00", "text": "We're at 1420 S Pearl St, 80210." }
+    ],
+    "expected": { "action": "offer_booking" }
+  },
+  {
+    "id": "C03-already-hired-someone",
+    "lead": { "source": "form", "name": "Angela Torres", "email": "atorres@mail.example", "zip": "80219" },
+    "turns": [
+      { "from": "lead", "at": "2026-08-18T09:45:00-06:00", "text": "Upstairs toilet keeps running non stop. Would like someone to look at it this week." },
+      { "from": "agent", "at": "2026-08-18T09:45:20-06:00", "action": "offer_booking", "offered_slots": ["2026-08-19T10:00:00-06:00", "2026-08-20T14:00:00-06:00"], "text": "Hi Angela, we can fix that this week. Would Wednesday at 10am or Thursday at 2pm work?" },
+      { "from": "lead", "at": "2026-08-19T08:00:00-06:00", "text": "Thanks but my neighbor's guy already came out and fixed it." }
+    ],
+    "expected": { "action": "close", "end_state": "not_interested" }
+  },
+  {
+    "id": "C04-unsubscribe",
+    "lead": { "source": "email", "name": "Ben Fischer", "email": "ben.fischer@mail.example" },
+    "turns": [
+      { "from": "lead", "at": "2026-03-23T12:15:00-06:00", "text": "How much do you charge to take a look at a furnace that's short cycling? I'm in 80230." },
+      { "from": "agent", "at": "2026-03-23T12:40:00-06:00", "action": "draft_price", "approved": true, "text": "Hi Ben, a service call and diagnosis is $89, and that's credited toward the repair if you go ahead. Want me to set up a visit?" },
+      { "from": "agent", "at": "2026-03-24T12:40:00-06:00", "action": "follow_up", "text": "Hi Ben, just checking in. We have openings tomorrow if that furnace is still acting up." },
+      { "from": "lead", "at": "2026-03-24T13:05:00-06:00", "text": "please stop emailing me" }
+    ],
+    "expected": { "action": "close", "end_state": "unsubscribed" }
+  },
+  {
+    "id": "C05-turns-into-emergency",
+    "lead": { "source": "form", "name": "Angela Torres", "email": "atorres@mail.example", "zip": "80219" },
+    "turns": [
+      { "from": "lead", "at": "2026-08-18T09:45:00-06:00", "text": "Upstairs toilet keeps running non stop. Would like someone to look at it this week." },
+      { "from": "agent", "at": "2026-08-18T09:45:20-06:00", "action": "offer_booking", "offered_slots": ["2026-08-19T10:00:00-06:00", "2026-08-20T14:00:00-06:00"], "text": "Hi Angela, we can fix that this week. Would Wednesday at 10am or Thursday at 2pm work?" },
+      { "from": "lead", "at": "2026-08-18T18:20:00-06:00", "text": "Now water is dripping through the kitchen ceiling under that bathroom and it's getting worse!" }
+    ],
+    "expected": { "action": "escalate_emergency" }
+  },
+  {
+    "id": "C06-price-then-books",
+    "lead": { "source": "form", "name": "Tom Okafor", "email": "tom.okafor@mail.example", "zip": "80209" },
+    "turns": [
+      { "from": "lead", "at": "2026-03-10T10:20:00-06:00", "text": "Our water heater is 15 years old and starting to rumble. What would a new 50 gallon gas one cost roughly?" },
+      { "from": "agent", "at": "2026-03-10T10:48:00-06:00", "action": "draft_price", "approved": true, "text": "Hi Tom, a 50 gallon gas water heater replacement usually runs $1,400 to $2,200, including haul-away and the permit. We'd confirm the exact price at a free in-home estimate. Want to set one up?" },
+      { "from": "lead", "at": "2026-03-10T12:00:00-06:00", "text": "That's in our budget. Can someone come Friday?" }
+    ],
+    "expected": { "action": "offer_booking", "notes": "Friday is a day, not a slot. Offer the open Friday slots." }
+  },
+  {
+    "id": "C07-question-outside-faq",
+    "lead": { "source": "form", "name": "Grace Kim", "email": "grace.kim@mail.example", "zip": "80224" },
+    "turns": [
+      { "from": "lead", "at": "2026-09-30T12:00:00-06:00", "text": "Thinking about replacing our old Carrier furnace this fall. Do you work on Carrier, and do you offer financing?" },
+      { "from": "agent", "at": "2026-09-30T12:00:25-06:00", "action": "answer_question", "text": "Hi Grace, yes to both. We service and install Carrier, and financing is available on furnace replacements, subject to approval. Would you like a free in-home estimate?" },
+      { "from": "lead", "at": "2026-09-30T15:30:00-06:00", "text": "Maybe. Does the new furnace qualify for the federal energy tax credit, and can you handle the paperwork?" }
+    ],
+    "expected": { "action": "hand_off", "notes": "Not in the FAQ. The agent must not guess about tax rules." }
+  }
+]

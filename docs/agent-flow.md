@@ -45,9 +45,10 @@ The model returns fixed fields, never free text:
 | `urgency` | emergency / this_week / flexible |
 | `wants_price` | true / false |
 | `missing_info` | list, e.g. `["address", "what is broken"]` |
+| `zip` | zip code found in the message, or null (emails don't have a zip field) |
 | `summary` | one line for the owner, e.g. "No hot water, 15 yr old tank, wants replacement quote" |
 
-**Emergency** means things like: active leak or flooding, no heat in freezing weather, gas smell, sewage backup. A gas smell always gets "leave the house and call the gas company" first, no matter what else the agent decides.
+**Emergency** means things like: active leak or flooding, no heat in freezing weather, gas smell, sewage backup, no cooling in extreme heat with a vulnerable person (elderly, infant, medical condition). A gas smell always gets "leave the house and call the gas company" first, no matter what else the agent decides.
 
 **Service area is a rule, not AI:** the zip is checked against a fixed list.
 
@@ -58,12 +59,15 @@ The agent sees the lead, the conversation so far, and the available time slots, 
 |---|---|
 | `ask_question` | Key info is missing. Ask one question, not a form. |
 | `offer_booking` | Normal repair, install or maintenance. Offer 2-3 open estimate slots from the slots table. |
+| `confirm_booking` | Lead picked one of the offered slots. Book it and confirm. (Added in phase 2: without it, "Wednesday at 3 is perfect" had nowhere to go.) |
 | `escalate_emergency` | Emergency. Reply instantly with the emergency line, alert the owner in Slack to call now. No booking attempt. |
 | `draft_price` | Lead asked for a price. Draft a range from the sample price sheet, send to Slack for approval. |
 | `answer_question` | Lead asked something the knowledge base covers (hours, brands serviced, warranty, financing). |
 | `hand_off` | Anything it isn't sure about, complaints, existing-customer issues. Owner takes over. |
 | `decline` | Outside the service area or a job they don't do. Polite reply, close. |
 | `close` | Not a real lead, or lead said no. No reply for spam. |
+
+When more than one action fits, the order in [sample-leads/README.md](../sample-leads/README.md#labelling-rules) decides (not a lead, emergency, decline, hand off, ask, confirm, price, answer, book).
 
 ## 4. Guardrails (rules, checked before anything sends)
 - No price or dollar amount in a message unless the owner approved it.
