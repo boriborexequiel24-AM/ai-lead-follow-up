@@ -71,15 +71,24 @@ The agent sees the lead, the conversation so far, and the available time slots, 
 When more than one action fits, the order in [sample-leads/README.md](../sample-leads/README.md#labelling-rules) decides (not a lead, emergency, decline, hand off, ask, confirm, price, answer, book).
 
 ## 4. Guardrails (rules, checked before anything sends)
-- No price or dollar amount in a message unless the owner approved it.
-- No promised arrival times. Only offer slots that exist on the calendar.
-- Quiet hours: nothing sent 8pm to 8am, except the emergency acknowledgement.
-- Max 4 messages without a reply, then stop.
-- Stop immediately on "stop", "unsubscribe", "not interested" or similar.
-- Every message, decision and reason is logged and visible on the dashboard.
-- Demo only: outbound mail goes to inboxes Exequiel controls. Never a real person.
+All in the Postgres function `leads.check_decision` (built in phase 4, tested by `scripts/test_guardrails.py`).
 
-If a check fails, the action becomes `hand_off` instead of being sent.
+**Turn the action into `hand_off`** (the AI's reply is not sent; the customer gets a safe holding message, or the emergency line if it was an emergency):
+- A dollar amount in any reply except a price draft.
+- A price draft whose `price_code` isn't on the sheet, or any amount outside that row's range.
+- An offered slot that isn't an open, future slot in the slots table (made-up times included), or offer_booking with no slots.
+- A booking for a slot that's taken or was never offered to this lead.
+- An empty reply, or one over 1,500 characters.
+
+**Override the agent:**
+- A clear stop request ("stop", "unsubscribe", "stop emailing me", "remove me from...") closes the lead as `unsubscribed` with no reply. "The water won't stop" doesn't count.
+- After the first reply plus 3 follow-ups go unanswered, the lead closes as `no_response`.
+- Unsubscribed leads get nothing, ever. Once a lead is handed off (including emergencies), a person is in charge and the agent stays quiet.
+- Em dashes are replaced with commas.
+
+**Quiet hours (8pm to 8am) apply to follow-ups only** (changed in phase 4). A reply to a message the lead just sent goes out right away, because answering fast is the point. A follow-up that falls in quiet hours is scheduled for 8am.
+
+**Outside the database:** prices wait for owner approval in Slack (phase 6), and outbound email only goes to addresses on `OUTBOUND_EMAIL_ALLOWLIST` (checked in n8n, phase 5). Arrival-time promises are handled by the prompt only. Every message, decision, reason and violation is stored.
 
 **Testing the menu:** a labelled set of about 20 sample leads, each with the action it should get, scored the same way `eval_extraction.py` scores invoices in `Real Work Systems/`. Includes tricky ones: a gas smell, an out-of-area zip, a vendor pitch, a price request hidden in a long message.
 
@@ -96,7 +105,7 @@ The reply goes back through step 2 with the full conversation, so the agent can 
 
 Emergencies skip this. If an emergency lead doesn't answer, the owner already got the Slack alert to call.
 
-**Demo clock:** one setting controls the speed. In demo mode 1 day passes as 1 minute, so the whole sequence plays out in about 10 minutes. Client mode uses real days. Quiet hours follow the same clock.
+**Demo clock:** one setting controls the speed. In demo mode 1 day passes as 1 minute, so the whole sequence plays out in about 10 minutes. Client mode uses real days.
 
 ## What a demo visitor sees
 1. Fills in the quote form on the fake company site.

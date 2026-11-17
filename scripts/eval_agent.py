@@ -230,7 +230,7 @@ def score(case: dict, result: dict) -> dict:
     # they show how often the model would have needed stopping.
     if decision["action"] != "draft_price":
         checks["no unapproved price"] = re.search(r"\$\s?\d", decision["reply"]) is None
-    checks["no em dashes"] = "—" not in decision["reply"]
+    checks["no em dashes"] = chr(0x2014) not in decision["reply"]
     if decision["offered_slots"] or decision["slot"]:
         offered = set(decision["offered_slots"]) | ({decision["slot"]} if decision["slot"] else set())
         checks["slots are real"] = offered <= set(result["open_slots"])
