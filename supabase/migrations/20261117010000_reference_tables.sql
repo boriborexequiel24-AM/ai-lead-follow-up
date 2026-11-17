@@ -45,4 +45,9 @@ create table if not exists leads.price_items (
 );
 
 -- Private to the public key until the dashboard phase decides what to show.
+-- Two locks: no table grants, and Row Level Security with no policies (which
+-- blocks every row). The service role used by n8n bypasses both.
 revoke all on leads.company_profile, leads.faq, leads.price_items from anon, authenticated;
+alter table leads.company_profile enable row level security;
+alter table leads.faq             enable row level security;
+alter table leads.price_items     enable row level security;
