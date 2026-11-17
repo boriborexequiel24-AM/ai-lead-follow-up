@@ -5,9 +5,15 @@ Every value below goes in `.env` (copy it from `.env.example`). Never commit `.e
 Later sections (running migrations, deploying workflows, the dashboard) get added as each phase is built.
 
 ## 1. Supabase
-- [ ] Decide: a new project, or reuse an existing one. The free plan allows a limited number of active projects, so check how many you have at supabase.com first. A new project keeps this demo's data and cleanup fully separate, which is the better choice if there's room.
-- [ ] From **Project Settings > Data API**, copy the Project URL into `SUPABASE_URL`, without the `/rest/v1/` ending.
-- [ ] From **Project Settings > API Keys**, copy the publishable key into `SUPABASE_ANON_KEY` and the secret key into `SUPABASE_SERVICE_ROLE_KEY`.
+This demo shares the invoice project's Supabase project (the free plan allows two active projects). Everything lives in its own schema, `leads`, so the two demos never touch each other's tables.
+
+- [ ] Open the **invoice project** at supabase.com.
+- [ ] Go to **SQL Editor**, click **New query**, paste all of `supabase/migrations/20261117000000_create_leads_schema.sql`, and click **Run**. It should say "Success. No rows returned".
+- [ ] Go to **Project Settings > Data API**. In **Exposed schemas**, add `leads` next to `public` (keep `public`, the invoice demo needs it) and click **Save**. Without this, the dashboard and n8n get a "schema must be one of the following" error.
+- [ ] Check it worked: in SQL Editor, run `select schema_name from information_schema.schemata where schema_name = 'leads';`. It should return one row.
+- [ ] Copy `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` from the invoice project's `.env`. They're the same keys.
+
+Later migrations in `supabase/migrations/` are run the same way, in name order.
 
 ## 2. OpenAI
 - [ ] Reuse your existing API key, or create a separate one for this project at platform.openai.com so its cost shows separately. Put it in `OPENAI_API_KEY`.
