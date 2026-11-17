@@ -10,6 +10,7 @@ This demo shares the invoice project's Supabase project (the free plan allows tw
 - [ ] Open the **invoice project** at supabase.com.
 - [ ] Go to **SQL Editor**, click **New query**, paste all of `supabase/migrations/20261117000000_create_leads_schema.sql`, and click **Run**. It should say "Success. No rows returned".
 - [ ] Go to **Project Settings > Data API**. In **Exposed schemas**, add `leads` next to `public` (keep `public`, the invoice demo needs it) and click **Save**. Without this, the dashboard and n8n get a "schema must be one of the following" error.
+- [ ] On the same page, turn **off** "Automatically expose new tables" and click **Save**. Supabase recommends this, and it stops new tables from being readable with the public key before we decide what's public. Existing invoice tables keep their access. Migrations here also revoke public access on each new table, so this is a second lock, not the only one.
 - [ ] Check it worked: in SQL Editor, run `select schema_name from information_schema.schemata where schema_name = 'leads';`. It should return one row.
 - [ ] Copy `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` from the invoice project's `.env`. They're the same keys.
 
