@@ -49,4 +49,4 @@ This needs its own Slack app: a Slack app has only one interactivity URL, and th
 - [ ] Do **not** add a filter that applies it automatically. Apply it by hand.
 - [ ] Put the account's address in `GMAIL_INTAKE_ADDRESS`.
 - [ ] Put the addresses you control (where test leads send from and replies may go) in `OUTBOUND_EMAIL_ALLOWLIST`. The agent will refuse to email anything else.
-- [ ] The existing Gmail OAuth credential in n8n (already published, so it doesn't expire) can be reused.
+- [ ] In n8n, create a new **Gmail OAuth2** credential signed in to the intake account. It can use the same Google Cloud OAuth client as the invoice demo's credential (that app is published, so the token doesn't expire after 7 days). The invoice credential itself can't be reused if it's signed in to a different Gmail account. Needed in phase 5.
