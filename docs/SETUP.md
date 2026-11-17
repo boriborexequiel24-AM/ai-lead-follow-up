@@ -1,0 +1,45 @@
+# Setup
+
+Every value below goes in `.env` (copy it from `.env.example`). Never commit `.env`.
+
+Later sections (running migrations, deploying workflows, the dashboard) get added as each phase is built.
+
+## 1. Supabase
+- [ ] Decide: a new project, or reuse an existing one. The free plan allows a limited number of active projects, so check how many you have at supabase.com first. A new project keeps this demo's data and cleanup fully separate, which is the better choice if there's room.
+- [ ] From **Project Settings > Data API**, copy the Project URL into `SUPABASE_URL`, without the `/rest/v1/` ending.
+- [ ] From **Project Settings > API Keys**, copy the publishable key into `SUPABASE_ANON_KEY` and the secret key into `SUPABASE_SERVICE_ROLE_KEY`.
+
+## 2. OpenAI
+- [ ] Reuse your existing API key, or create a separate one for this project at platform.openai.com so its cost shows separately. Put it in `OPENAI_API_KEY`.
+- [ ] Check the monthly budget limit under Settings > Limits covers both public demos. Visitors chatting with this one means more AI calls than the invoice demo.
+- [ ] Leave `OPENAI_MODEL` empty for now. It's picked in phase 3 from the eval.
+
+## 3. n8n (self-hosted)
+- [ ] Copy `N8N_BASE_URL` and `N8N_API_KEY` from the invoice project's `.env`.
+- [ ] Generate a new long random string for `N8N_WEBHOOK_SECRET`. Don't reuse the invoice one, so each demo can only call its own webhooks.
+
+## 4. Slack
+This needs its own Slack app: a Slack app has only one interactivity URL, and the invoice app's already points at the invoice workflow.
+
+- [ ] Use the same demo workspace as the invoice project.
+- [ ] At api.slack.com/apps, click **Create New App**, then **Paste a manifest**, and use:
+  ```json
+  {
+    "display_information": { "name": "Lead Assistant" },
+    "features": { "bot_user": { "display_name": "Lead Assistant", "always_online": true } },
+    "oauth_config": { "scopes": { "bot": ["chat:write", "chat:write.public"] } },
+    "settings": { "org_deploy_enabled": false, "socket_mode_enabled": false, "token_rotation_enabled": false }
+  }
+  ```
+- [ ] **Install to Workspace**, then copy the bot token (`xoxb-...`) into `SLACK_BOT_TOKEN` and the **Signing Secret** (Basic Information) into `SLACK_SIGNING_SECRET`.
+- [ ] Create `#lead-approvals` (price approvals) and `#lead-alerts` (emergencies and errors), and copy their channel IDs into `.env`.
+- [ ] Interactivity gets turned on in phase 6, once the approval workflow exists.
+
+## 5. Gmail
+**Anything this label picks up becomes a lead the agent replies to.** Treat applying it as "send this to the agent".
+
+- [ ] In the Gmail account, create a label named `lead-demo`. Like `invoice-demo`, it's a name no existing filter would ever apply.
+- [ ] Do **not** add a filter that applies it automatically. Apply it by hand.
+- [ ] Put the account's address in `GMAIL_INTAKE_ADDRESS`.
+- [ ] Put the addresses you control (where test leads send from and replies may go) in `OUTBOUND_EMAIL_ALLOWLIST`. The agent will refuse to email anything else.
+- [ ] The existing Gmail OAuth credential in n8n (already published, so it doesn't expire) can be reused.
