@@ -19,7 +19,7 @@ Every new lead gets a reply in seconds, day or night. An AI agent reads the requ
 
 **Metric to show:** `First reply in about 8 seconds, at roughly a third of a cent in AI cost`
 
-**Links:** Live demo · Code on GitHub
+**Links:** Live demo (https://leadwarden.vercel.app) · Code on GitHub (https://github.com/boriborexequiel24-AM/ai-lead-follow-up)
 
 ---
 

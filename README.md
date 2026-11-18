@@ -2,7 +2,7 @@
 
 An AI agent for a home services business that answers every new lead in seconds and keeps following up until the lead books, says no, or goes quiet. It picks the next step itself, but only from a fixed menu, and rules check every message before it goes out. The owner only steps in for prices, emergencies and anything the agent shouldn't answer alone.
 
-**[Try the live demo](https://dashboard-five-beige-69.vercel.app).** You play a customer of Copperline Plumbing & Air, a made-up plumbing and HVAC company in Denver. Send a request and the agent replies in about 8 seconds.
+**[Try the live demo](https://leadwarden.vercel.app).** You play a customer of Copperline Plumbing & Air, a made-up plumbing and HVAC company in Denver. Send a request and the agent replies in about 8 seconds.
 
 ![The demo company's site, with the quote form and ready-made scenarios](docs/images/home.png)
 
