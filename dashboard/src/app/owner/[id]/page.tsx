@@ -38,7 +38,9 @@ export default async function OwnerLeadPage({ params }: { params: Promise<{ id: 
         <aside className="space-y-4 lg:sticky lg:top-6">
           <LeadFacts lead={lead}>
             <p className="mt-4 text-xs text-stone-400">
-              {lead.follow_ups_sent > 0 ? `${lead.follow_ups_sent} follow-up(s) sent since the last reply. ` : ""}
+              {lead.follow_ups_sent > 0
+                ? `${lead.follow_ups_sent} follow-up${lead.follow_ups_sent === 1 ? "" : "s"} sent since the lead last wrote. `
+                : ""}
               Sample lead, made up for the demo.
             </p>
           </LeadFacts>

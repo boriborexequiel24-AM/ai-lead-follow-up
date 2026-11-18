@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 770" width="1000" height="770" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#A8A29E"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="770" fill="#FFFFFF"/>
+
+  <!-- Leads come in -->
+  <rect x="40" y="24" width="920" height="118" rx="12" fill="#FAFAF9" stroke="#D6D3D1"/>
+  <text x="60" y="50" font-size="14" font-weight="600" fill="#9A4A1C">A lead comes in</text>
+  <g font-size="12">
+    <rect x="60" y="62" width="280" height="64" rx="8" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <text x="200" y="88" text-anchor="middle" font-weight="600" fill="#1C1917">Website form</text>
+    <text x="200" y="107" text-anchor="middle" font-size="11" fill="#57534E">demo site on Vercel, with visitor limits</text>
+
+    <rect x="360" y="62" width="280" height="64" rx="8" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <text x="500" y="88" text-anchor="middle" font-weight="600" fill="#1C1917">Email</text>
+    <text x="500" y="107" text-anchor="middle" font-size="11" fill="#57534E">workflow 2 checks a Gmail label every minute</text>
+
+    <rect x="660" y="62" width="280" height="64" rx="8" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <text x="800" y="88" text-anchor="middle" font-weight="600" fill="#1C1917">The lead writes back</text>
+    <text x="800" y="107" text-anchor="middle" font-size="11" fill="#57534E">in the web thread or the same email thread</text>
+  </g>
+  <g stroke="#A8A29E" stroke-width="1.5" fill="none" marker-end="url(#arrow)">
+    <path d="M 200 126 L 200 178"/>
+    <path d="M 500 126 L 500 178"/>
+    <path d="M 800 126 L 800 178"/>
+  </g>
+
+  <!-- Workflow 1 -->
+  <rect x="40" y="180" width="920" height="160" rx="12" fill="#FBF5EF" stroke="#E9C9A8"/>
+  <text x="60" y="206" font-size="14" font-weight="600" fill="#9A4A1C">Workflow 1 in n8n: one agent turn, about 5 seconds</text>
+  <g font-size="12">
+    <rect x="60" y="220" width="130" height="96" rx="8" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <text x="125" y="254" text-anchor="middle" font-weight="600" fill="#1C1917">Store message</text>
+    <text x="125" y="274" text-anchor="middle" font-size="10.5" fill="#57534E">finds or creates</text>
+    <text x="125" y="289" text-anchor="middle" font-size="10.5" fill="#57534E">the lead</text>
+
+    <rect x="210" y="220" width="130" height="96" rx="8" fill="#FFFFFF" stroke="#C06A2C"/>
+    <text x="275" y="254" text-anchor="middle" font-weight="600" fill="#1C1917">Read (AI)</text>
+    <text x="275" y="274" text-anchor="middle" font-size="10.5" fill="#57534E">job, urgency, zip,</text>
+    <text x="275" y="289" text-anchor="middle" font-size="10.5" fill="#57534E">wants a price?</text>
+
+    <rect x="360" y="220" width="130" height="96" rx="8" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <text x="425" y="254" text-anchor="middle" font-weight="600" fill="#1C1917">Service area</text>
+    <text x="425" y="274" text-anchor="middle" font-size="10.5" fill="#57534E">zip list check,</text>
+    <text x="425" y="289" text-anchor="middle" font-size="10.5" fill="#57534E">a rule, not AI</text>
+
+    <rect x="510" y="220" width="130" height="96" rx="8" fill="#FFFFFF" stroke="#C06A2C"/>
+    <text x="575" y="254" text-anchor="middle" font-weight="600" fill="#1C1917">Decide (AI)</text>
+    <text x="575" y="274" text-anchor="middle" font-size="10.5" fill="#57534E">one action from</text>
+    <text x="575" y="289" text-anchor="middle" font-size="10.5" fill="#57534E">a fixed menu</text>
+
+    <rect x="660" y="220" width="130" height="96" rx="8" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <text x="725" y="254" text-anchor="middle" font-weight="600" fill="#1C1917">Guardrails</text>
+    <text x="725" y="274" text-anchor="middle" font-size="10.5" fill="#57534E">rules in Postgres;</text>
+    <text x="725" y="289" text-anchor="middle" font-size="10.5" fill="#57534E">if off, hand it off</text>
+
+    <rect x="810" y="220" width="130" height="96" rx="8" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <text x="875" y="254" text-anchor="middle" font-weight="600" fill="#1C1917">Act</text>
+    <text x="875" y="274" text-anchor="middle" font-size="10.5" fill="#57534E">reply, ask the</text>
+    <text x="875" y="289" text-anchor="middle" font-size="10.5" fill="#57534E">owner, or alert</text>
+  </g>
+  <g stroke="#A8A29E" stroke-width="1.5" fill="none" marker-end="url(#arrow)">
+    <path d="M 190 268 L 208 268"/>
+    <path d="M 340 268 L 358 268"/>
+    <path d="M 490 268 L 508 268"/>
+    <path d="M 640 268 L 658 268"/>
+    <path d="M 790 268 L 808 268"/>
+  </g>
+  <text x="575" y="332" text-anchor="middle" font-size="10.5" fill="#9A4A1C">orange = AI step, the rest are plain code and rules</text>
+
+  <!-- Outcomes -->
+  <g stroke="#A8A29E" stroke-width="1.5" fill="none" marker-end="url(#arrow)">
+    <path d="M 875 316 L 875 352 L 200 352 L 200 376"/>
+    <path d="M 500 352 L 500 376"/>
+    <path d="M 800 352 L 800 376"/>
+  </g>
+  <g font-size="12">
+    <rect x="60" y="378" width="280" height="86" rx="8" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <text x="200" y="404" text-anchor="middle" font-weight="600" fill="#1C1917">Reply sent in seconds</text>
+    <text x="200" y="424" text-anchor="middle" font-size="11" fill="#57534E">in the web thread, or by email in the</text>
+    <text x="200" y="440" text-anchor="middle" font-size="11" fill="#57534E">lead's own Gmail thread</text>
+
+    <rect x="360" y="378" width="280" height="86" rx="8" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <text x="500" y="404" text-anchor="middle" font-weight="600" fill="#1C1917">Price waits for the owner</text>
+    <text x="500" y="424" text-anchor="middle" font-size="11" fill="#57534E">Approve / Reject in Slack (workflow 3), or</text>
+    <text x="500" y="440" text-anchor="middle" font-size="11" fill="#57534E">the demo visitor plays owner (workflow 6)</text>
+
+    <rect x="660" y="378" width="280" height="86" rx="8" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <text x="800" y="404" text-anchor="middle" font-weight="600" fill="#1C1917">Owner alerted in Slack</text>
+    <text x="800" y="424" text-anchor="middle" font-size="11" fill="#57534E">emergencies, hand-offs, and anything</text>
+    <text x="800" y="440" text-anchor="middle" font-size="11" fill="#57534E">the agent shouldn't answer alone</text>
+  </g>
+
+  <!-- Background workflows -->
+  <rect x="40" y="494" width="920" height="146" rx="12" fill="#FAFAF9" stroke="#D6D3D1"/>
+  <text x="60" y="520" font-size="14" font-weight="600" fill="#9A4A1C">Running in the background</text>
+  <g font-size="12">
+    <rect x="60" y="532" width="430" height="92" rx="8" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <text x="78" y="556" font-weight="600" fill="#1C1917">Workflow 4: follow-ups, every minute</text>
+    <text x="78" y="576" font-size="11" fill="#57534E">No reply? A new message on day 1, 3 and 7, written for that lead</text>
+    <text x="78" y="592" font-size="11" fill="#57534E">and checked by the same guardrails. Closed as no response on day 10.</text>
+    <text x="78" y="608" font-size="11" fill="#57534E">Demo clock: 1 day = 1 minute, so the whole sequence takes 10 minutes.</text>
+
+    <rect x="510" y="532" width="430" height="92" rx="8" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <text x="528" y="556" font-weight="600" fill="#1C1917">Workflow 5: cleanup, every hour</text>
+    <text x="528" y="576" font-size="11" fill="#57534E">Deletes demo visitor leads after 24 hours, with their messages</text>
+    <text x="528" y="592" font-size="11" fill="#57534E">and decisions, frees their booked visit times, and keeps a week</text>
+    <text x="528" y="608" font-size="11" fill="#57534E">of visit times open.</text>
+  </g>
+
+  <!-- Database -->
+  <rect x="40" y="664" width="920" height="82" rx="12" fill="#1C1917"/>
+  <text x="60" y="692" font-size="14" font-weight="600" fill="#FFFFFF">Supabase (Postgres)</text>
+  <text x="60" y="714" font-size="12" fill="#D6D3D1">leads · messages · decisions · approvals · visit slots · settings (demo or real clock)</text>
+  <text x="60" y="732" font-size="12" fill="#D6D3D1">Every decision is stored with its reason and what the guardrails changed. The owner view reads it from here.</text>
+</svg>
