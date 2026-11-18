@@ -100,12 +100,16 @@ The reply goes back through step 2 with the full conversation, so the agent can 
 |---|---|
 | +1 day | Short nudge, written for this lead (not a template) |
 | +3 days | Different angle, e.g. mention same-week availability or financing |
-| +7 days | Last message, easy "reply 1 to book, 2 to close" style ending |
-| +7 days, no reply | Close as `no_response` |
+| +7 days | Last message with an easy ending: reply with a time, or let us know it's sorted |
+| +10 days, no reply | Close as `no_response` (no AI call) |
+
+Follow-ups are written by their own prompt, `agent/follow_up_prompt.md`. It can only offer times, ask a question, or close, and never repeats a price (even an approved one). The gaps (1, 2, 4 and 3 days) are in `leads.settings.follow_up_gaps_days`.
 
 Emergencies skip this. If an emergency lead doesn't answer, the owner already got the Slack alert to call.
 
-**Demo clock:** one setting controls the speed. In demo mode 1 day passes as 1 minute, so the whole sequence plays out in about 10 minutes. Client mode uses real days.
+**Demo clock:** one setting controls the speed: `clock_mode` in the `leads.settings` table. In demo mode 1 day passes as 1 minute (`demo_minutes_per_day`), so the whole sequence plays out in about 10 minutes. Set it to `real` for a client. Quiet hours only apply on the real clock.
+
+**Cleanup:** every hour, visitor leads older than 24 hours (`visitor_retention_hours`) are deleted with their messages, decisions and approvals, and their booked slots open up again.
 
 ## What a demo visitor sees
 1. Fills in the quote form on the fake company site.
