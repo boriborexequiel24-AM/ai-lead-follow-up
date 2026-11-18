@@ -12,13 +12,13 @@ export function LeadFacts({ lead, children }: { lead: LeadCard; children?: React
   ];
   if (lead.booked_slot) rows.push(["Booked", <span key="b" className="font-medium text-emerald-700">{lead.booked_slot}</span>]);
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4">
-      <h2 className="text-sm font-semibold">What the agent knows</h2>
-      {lead.summary && <p className="mt-2 text-sm text-stone-600">{lead.summary}</p>}
-      <dl className="mt-3 space-y-2 text-sm">
+    <div className="rounded-2xl border border-sand-200 bg-white p-5">
+      <h2 className="font-display text-lg font-extrabold">What the agent knows</h2>
+      {lead.summary && <p className="mt-2 text-sm text-ink-600">{lead.summary}</p>}
+      <dl className="mt-3 divide-y divide-sand-100 border-t border-sand-100 text-sm">
         {rows.map(([k, v]) => (
-          <div key={k} className="flex items-start justify-between gap-3">
-            <dt className="text-stone-500">{k}</dt>
+          <div key={k} className="flex items-start justify-between gap-3 py-2">
+            <dt className="text-ink-500">{k}</dt>
             <dd className="text-right">{v}</dd>
           </div>
         ))}

@@ -1,20 +1,41 @@
 @import "tailwindcss";
 
+/* Copperline brand: navy and copper on a warm sand page. */
 @theme {
-  --color-copper-50: #fbf5ef;
-  --color-copper-100: #f5e6d6;
-  --color-copper-200: #e9c9a8;
-  --color-copper-500: #c06a2c;
-  --color-copper-600: #9a4a1c;
-  --color-copper-700: #7a3914;
-  --color-copper-900: #3d1d0b;
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --color-copper-50: #fbf3ec;
+  --color-copper-100: #f5e2d3;
+  --color-copper-200: #ebc3a5;
+  --color-copper-300: #e8955a; /* text and accents on navy */
+  --color-copper-500: #c9682f; /* logo mark */
+  --color-copper-600: #b85a22; /* buttons and icons */
+  --color-copper-700: #8f4216; /* hover */
+  --color-copper-900: #4a220b;
+
+  --color-navy-50: #eef1f5;
+  --color-navy-200: #c9d3e0;
+  --color-navy-300: #a9b6c8;
+  --color-navy-600: #3a5174;
+  --color-navy-700: #2b4366;
+  --color-navy-800: #22385a;
+  --color-navy-900: #13233a; /* header, hero, body text */
+  --color-navy-950: #0b1626; /* demo strip and footer */
+
+  --color-sand-50: #f6f3ee; /* page background */
+  --color-sand-100: #ece7df;
+  --color-sand-200: #e2dbd0; /* card borders */
+  --color-sand-300: #d5cdbf; /* input borders */
+
+  --color-ink-400: #8a93a0;
+  --color-ink-500: #6b7686;
+  --color-ink-600: #4e5a6b;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-archivo), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
-  background: var(--color-stone-50);
-  color: var(--color-stone-900);
+  background: var(--color-sand-50);
+  color: var(--color-navy-900);
   -webkit-font-smoothing: antialiased;
 }
 

@@ -1,12 +1,12 @@
 import { END_STATE_LABELS, STATUS_LABELS, label } from "@/lib/format";
 
 const TONES: Record<string, string> = {
-  new: "bg-stone-100 text-stone-700 ring-stone-200",
-  active: "bg-sky-50 text-sky-700 ring-sky-200",
+  new: "bg-sand-100 text-navy-900 ring-sand-200",
+  active: "bg-navy-50 text-navy-800 ring-navy-200",
   waiting_approval: "bg-amber-50 text-amber-800 ring-amber-200",
   booked: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   handed_off: "bg-violet-50 text-violet-700 ring-violet-200",
-  closed: "bg-stone-100 text-stone-600 ring-stone-200",
+  closed: "bg-sand-100 text-ink-600 ring-sand-200",
 };
 
 /** The lead's status, with the end state for closed leads ("Closed: no response"). */

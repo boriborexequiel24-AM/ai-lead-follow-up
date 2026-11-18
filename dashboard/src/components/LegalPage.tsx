@@ -1,11 +1,13 @@
 import Link from "next/link";
+import { Container, PageHero } from "./Brand";
 
-// Shared shell for the privacy and terms pages: a readable column with plain headings.
+// Shared shell for the privacy and terms pages: the navy band, then a
+// readable column with plain headings.
 
 export function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3">
-      <h2 className="text-base font-semibold text-stone-900">{title}</h2>
+      <h2 className="font-display text-xl font-extrabold text-navy-900">{title}</h2>
       {children}
     </section>
   );
@@ -23,20 +25,21 @@ export function LegalPage({
   children: React.ReactNode;
 }) {
   return (
-    <article className="max-w-2xl space-y-8 [&_a]:text-copper-700 [&_li]:text-stone-600 [&_p]:text-stone-600 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5">
-      <header className="space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-        <p className="text-sm text-stone-500">Last updated {updated}</p>
-        <p>{intro}</p>
-      </header>
+    <>
+      <PageHero eyebrow={`Last updated ${updated}`} title={title}>
+        {intro}
+      </PageHero>
+      <Container className="py-10 sm:py-12">
+        <article className="max-w-2xl space-y-8 leading-relaxed [&_a]:text-copper-600 [&_a:hover]:text-copper-700 [&_li]:text-ink-600 [&_p]:text-ink-600 [&_strong]:text-navy-900 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5 [&_ul]:marker:text-copper-600">
+          {children}
 
-      {children}
-
-      <footer className="border-t border-stone-200 pt-6 text-sm">
-        <Link href="/" className="text-copper-700 hover:underline">
-          Back to the demo
-        </Link>
-      </footer>
-    </article>
+          <footer className="border-t border-sand-200 pt-6 text-sm">
+            <Link href="/" className="font-semibold hover:underline">
+              Back to the demo
+            </Link>
+          </footer>
+        </article>
+      </Container>
+    </>
   );
 }

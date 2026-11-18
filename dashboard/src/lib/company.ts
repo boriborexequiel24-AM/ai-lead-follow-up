@@ -32,15 +32,6 @@ export type Scenario = {
 
 export const SCENARIOS: Scenario[] = [
   {
-    id: "tune-up",
-    label: "Book a tune-up",
-    shows: "Offers real open times, then books the one you pick.",
-    name: "Jordan Ellis",
-    email: "jordan@example.com",
-    zip: "80206",
-    message: "Can I get a furnace tune-up sometime next week? Mornings work best for me.",
-  },
-  {
     id: "burst-pipe",
     label: "Burst pipe",
     shows: "Treats it as an emergency: gives the 24/7 line and alerts the owner.",
@@ -48,6 +39,15 @@ export const SCENARIOS: Scenario[] = [
     email: "dana@example.com",
     zip: "80209",
     message: "Water is spraying out of a pipe under the kitchen sink and I can't find the shutoff. Can someone come right now?",
+  },
+  {
+    id: "tune-up",
+    label: "Book a tune-up",
+    shows: "Offers real open times, then books the one you pick.",
+    name: "Jordan Ellis",
+    email: "jordan@example.com",
+    zip: "80206",
+    message: "Can I get a furnace tune-up sometime next week? Mornings work best for me.",
   },
   {
     id: "price",

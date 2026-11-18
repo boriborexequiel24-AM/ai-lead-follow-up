@@ -33,7 +33,7 @@ export default function Privacy() {
           </li>
           <li>Within 24 hours an automatic job deletes the conversation and everything stored with it.</li>
         </ul>
-        <p className="font-medium text-stone-900">
+        <p className="rounded-[10px] bg-[#FBF1DA] px-3 py-2.5 font-medium !text-[#7A5A12]">
           So please use made-up details. A fake name and an address like you@example.com work exactly the same.
         </p>
       </Section>

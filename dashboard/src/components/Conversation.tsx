@@ -15,10 +15,10 @@ export function Conversation({ events, mode, leadName }: { events: ThreadEvent[]
         if (event.kind === "lead") {
           return (
             <li key={i} className="flex flex-col items-end">
-              <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-copper-600 px-4 py-2.5 text-sm text-white">
+              <div className="max-w-[85%] whitespace-pre-wrap rounded-[16px_16px_4px_16px] bg-copper-600 px-4 py-2.5 text-sm text-white">
                 {event.body}
               </div>
-              <p className="mt-1 text-xs text-stone-400">
+              <p className="mt-1 text-xs text-ink-500">
                 {mode === "customer" ? "You" : leadName || "Lead"}
                 {mode === "owner" && event.channel === "email" ? " by email" : ""} &middot; {timeOfDay(event.at)}
               </p>
@@ -49,21 +49,21 @@ function AgentStep({ event, mode, followUp }: { event: AgentEvent; mode: Mode; f
         {msg.body}
       </>
     ) : (
-      <span className="italic text-stone-500">Checking the price with the owner before sending it...</span>
+      <span className="italic text-ink-500">Checking the price with the owner before sending it...</span>
     );
   } else if (msg?.status === "rejected") {
     bubble = owner ? (
       <>
         <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-red-700">Rejected, never sent</span>
-        <span className="text-stone-500 line-through">{msg.body}</span>
+        <span className="text-ink-500 line-through">{msg.body}</span>
       </>
     ) : (
-      <span className="italic text-stone-500">The owner will get in touch about the price personally.</span>
+      <span className="italic text-ink-500">The owner will get in touch about the price personally.</span>
     );
   } else if (msg?.status === "scheduled") {
     bubble = (
       <>
-        <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-stone-500">
+        <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink-500">
           Held for quiet hours{msg.send_after ? `, goes out at ${timeOfDay(msg.send_after)}` : ""}
         </span>
         {owner ? msg.body : null}
@@ -73,34 +73,34 @@ function AgentStep({ event, mode, followUp }: { event: AgentEvent; mode: Mode; f
 
   const tone =
     event.final_action === "escalate_emergency"
-      ? "bg-red-50 text-red-800 ring-red-200"
+      ? "bg-[#FCE8E4] text-[#9B2C1C] ring-[#F3C6BC]"
       : event.final_action === "hand_off" || changed
         ? "bg-amber-50 text-amber-800 ring-amber-200"
         : event.final_action === "confirm_booking"
           ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
-          : "bg-stone-100 text-stone-700 ring-stone-200";
+          : "bg-sand-100 text-navy-900 ring-sand-200";
 
   return (
     <li className="flex flex-col items-start">
       {bubble ? (
-        <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-bl-sm border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-800 shadow-sm">
+        <div className="max-w-[85%] whitespace-pre-wrap rounded-[16px_16px_16px_4px] bg-navy-50 px-4 py-2.5 text-sm leading-[1.5] text-navy-900">
           {bubble}
         </div>
       ) : (
-        <p className="text-sm italic text-stone-500">
+        <p className="text-sm italic text-ink-500">
           {event.final_action === "close" && event.end_state === "no_response"
             ? "No reply after 3 follow-ups, so the agent closed the lead."
             : `${label(ACTION_LABELS, event.final_action)}, no message sent.`}
         </p>
       )}
 
-      <div className="mt-1.5 flex max-w-[85%] flex-wrap items-center gap-x-2 gap-y-1 text-xs text-stone-400">
+      <div className="mt-1.5 flex max-w-[85%] flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500">
         <span>Copperline agent &middot; {timeOfDay(event.at)}</span>
         <span className={`rounded-full px-2 py-0.5 font-medium ring-1 ring-inset ${tone}`}>
           {label(ACTION_LABELS, event.final_action)}
         </span>
         {followUp && (
-          <span className="rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-700 ring-1 ring-inset ring-sky-200">
+          <span className="rounded-full bg-copper-50 px-2 py-0.5 font-medium text-copper-700 ring-1 ring-inset ring-copper-200">
             Follow-up {followUp}
             {FOLLOW_UP_DAY[followUp] ? `, day ${FOLLOW_UP_DAY[followUp]}` : ""}
           </span>
@@ -124,20 +124,20 @@ function AgentStep({ event, mode, followUp }: { event: AgentEvent; mode: Mode; f
       )}
 
       {owner ? (
-        <div className="mt-1.5 max-w-[85%] space-y-1 text-xs text-stone-600">
+        <div className="mt-1.5 max-w-[85%] space-y-1 text-xs text-ink-600">
           <p>
-            <span className="font-semibold text-stone-700">Why:</span> {event.reason}
+            <span className="font-semibold text-navy-900">Why:</span> {event.reason}
           </p>
           {event.owner_note && (
             <p>
-              <span className="font-semibold text-stone-700">Note for the owner:</span> {event.owner_note}
+              <span className="font-semibold text-navy-900">Note for the owner:</span> {event.owner_note}
             </p>
           )}
         </div>
       ) : (
-        <details className="mt-1 max-w-[85%] text-xs text-stone-500">
+        <details className="mt-1 max-w-[85%] text-xs text-ink-500">
           <summary className="cursor-pointer select-none hover:text-copper-700">Why did it do that?</summary>
-          <p className="mt-1 rounded-lg bg-stone-100 px-3 py-2 text-stone-600">{event.reason}</p>
+          <p className="mt-1 rounded-lg bg-sand-100 px-3 py-2 text-ink-600">{event.reason}</p>
         </details>
       )}
     </li>

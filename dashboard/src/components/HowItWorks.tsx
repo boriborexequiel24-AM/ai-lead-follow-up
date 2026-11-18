@@ -1,47 +1,49 @@
-// The five steps behind every reply, for visitors and prospective clients.
+import Link from "next/link";
+
+// "What happens next, to the second": the steps behind every reply, with the
+// real timings from the live demo (about 8 seconds to the first reply) and
+// the follow-up schedule.
 
 const STEPS = [
+  { at: "0s", title: "Message in.", body: "From the form or by email." },
   {
-    title: "Reads the request",
-    body: "AI turns the message into plain facts: what's wrong, how urgent, where, and whether they want a price.",
+    at: "~5s",
+    title: "Read and decide.",
+    body: "Two AI steps: the job, how urgent, the zip and whether you want a price, then one next step from a fixed menu.",
   },
   {
-    title: "Picks one next step",
-    body: "From a fixed menu: offer times, book, ask a question, answer, draft a price, escalate, decline or hand off.",
+    at: "~8s",
+    title: "Check and reply.",
+    body: "Rules first: real times only, no price the owner hasn't approved. Prices and emergencies also go to the owner in Slack.",
   },
-  {
-    title: "Rules check the reply",
-    body: "Only real open times, no price the owner hasn't approved, the emergency line for emergencies, and opt-outs respected. Anything off goes to a person.",
-  },
-  {
-    title: "The owner approves prices",
-    body: "Quotes go to the owner in Slack with Approve and Reject buttons. On this demo, you get to play the owner.",
-  },
-  {
-    title: "Follows up until it's settled",
-    body: "No reply? A fresh follow-up on day 1, 3 and 7, then the lead is closed. On the demo clock a day lasts a minute.",
-  },
+  { at: "Day 1·3·7", title: "Follow up.", body: "If you go quiet. On this demo a day lasts a minute." },
+  { at: "Day 10", title: "Close.", body: "Still no reply, so the lead is closed and nobody gets chased forever." },
 ];
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="scroll-mt-8">
-      <h2 className="text-xl font-semibold tracking-tight">What happens after you hit send</h2>
-      <p className="mt-1 max-w-2xl text-sm text-stone-600">
-        The agent replies on its own, but only inside clear limits. Every step is stored, so the owner can see what it
-        did and why.
+    <div id="how-it-works" className="min-w-0 flex-[1_1_420px] scroll-mt-6">
+      <h2 className="font-display text-[26px] font-extrabold leading-tight">What happens next, to the second</h2>
+      <p className="mt-1.5 text-[15px] text-ink-600">
+        The agent picks from a fixed menu, and rules check it before anything goes out.
       </p>
-      <ol className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {STEPS.map((step, i) => (
-          <li key={step.title} className="rounded-xl border border-stone-200 bg-white p-4">
-            <span className="grid size-7 place-items-center rounded-full bg-copper-100 text-xs font-semibold text-copper-700">
-              {i + 1}
+      <ol className="mt-5">
+        {STEPS.map((step) => (
+          <li key={step.at} className="flex gap-4 border-t border-sand-200 py-3.5 last:border-b">
+            <span className="min-w-[76px] font-display font-extrabold text-copper-600">{step.at}</span>
+            <span>
+              <strong>{step.title}</strong> <span className="text-ink-600">{step.body}</span>
             </span>
-            <h3 className="mt-3 text-sm font-semibold">{step.title}</h3>
-            <p className="mt-1 text-sm text-stone-600">{step.body}</p>
           </li>
         ))}
       </ol>
-    </section>
+      <p className="mt-5 text-[15px] text-ink-600">
+        Run a business like this?{" "}
+        <Link href="/owner" className="font-semibold text-copper-600 hover:text-copper-700 hover:underline">
+          See it from the owner&apos;s side
+        </Link>
+        : response times, bookings, and every decision the agent made and why.
+      </p>
+    </div>
   );
 }

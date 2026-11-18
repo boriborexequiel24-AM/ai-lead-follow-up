@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ThreadData } from "@/lib/types";
 import { Conversation } from "./Conversation";
@@ -91,71 +90,71 @@ export function ThreadView({ token, initial, maxMessages }: { token: string; ini
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem]">
-      <section className="rounded-2xl border border-stone-200 bg-stone-100/60 p-4 sm:p-6">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 pb-4">
+      <section className="min-w-0 overflow-hidden rounded-[22px] border border-sand-200 bg-white">
+        <div className="flex items-center gap-2.5 border-b border-sand-100 px-4 py-3.5 sm:px-6">
+          <div className="grid size-[34px] shrink-0 place-items-center rounded-full bg-copper-500 text-sm font-bold text-white">C</div>
           <div>
-            <h1 className="text-lg font-semibold">Your conversation with Copperline</h1>
-            <p className="text-xs text-stone-500">Private link, only you can see this. Deleted after 24 hours.</p>
+            <p className="text-sm font-semibold">Copperline Plumbing &amp; Air</p>
+            <p className="text-xs text-[#2F7D4F]">{agentReplies ? "Replies in seconds" : "A person has this conversation"}</p>
           </div>
-          <Link href="/" className="text-sm text-copper-700 hover:underline">
-            Try another scenario
-          </Link>
         </div>
 
-        <Conversation events={thread.events} mode="customer" />
+        <div className="px-4 py-5 sm:px-6">
+          <Conversation events={thread.events} mode="customer" />
 
-        {pending && leadMessages === pending.before && (
-          <div className="mt-4 flex justify-end">
-            <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-copper-600/80 px-4 py-2.5 text-sm text-white">
-              {pending.text}
+          {pending && leadMessages === pending.before && (
+            <div className="mt-4 flex justify-end">
+              <div className="max-w-[85%] whitespace-pre-wrap rounded-[16px_16px_4px_16px] bg-copper-600/80 px-4 py-2.5 text-sm text-white">
+                {pending.text}
+              </div>
             </div>
-          </div>
-        )}
-        {working && (
-          <div className="mt-4 inline-flex items-center gap-1 rounded-2xl rounded-bl-sm border border-stone-200 bg-white px-4 py-3" aria-label="The agent is replying">
-            <span className="typing-dot size-1.5 rounded-full bg-stone-400" />
-            <span className="typing-dot size-1.5 rounded-full bg-stone-400" />
-            <span className="typing-dot size-1.5 rounded-full bg-stone-400" />
-          </div>
-        )}
-
-        {approval && (
-          <div className="mt-6 rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">You&apos;re the owner now</p>
-            <p className="mt-1 text-sm text-amber-900">
-              The agent drafted a reply with a price from the sample price sheet. Prices never go out without the
-              owner&apos;s OK, so this would normally wait in Slack for a click. Approve it to send it to the customer
-              (you), or reject it and the lead is handed to a person.
-            </p>
-            <blockquote className="mt-3 whitespace-pre-wrap rounded-lg border-l-4 border-amber-400 bg-white px-3 py-2 text-sm text-stone-800">
-              {approval.reply}
-            </blockquote>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                onClick={() => post("approval", { approved: true })}
-                disabled={working}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-              >
-                Approve and send
-              </button>
-              <button
-                onClick={() => post("approval", { approved: false })}
-                disabled={working}
-                className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-700 hover:border-red-400 hover:text-red-700 disabled:opacity-60"
-              >
-                Reject
-              </button>
+          )}
+          {working && (
+            <div className="mt-4 inline-flex items-center gap-1 rounded-[16px_16px_16px_4px] bg-navy-50 px-4 py-3" aria-label="The agent is replying">
+              <span className="typing-dot size-1.5 rounded-full bg-ink-500" />
+              <span className="typing-dot size-1.5 rounded-full bg-ink-500" />
+              <span className="typing-dot size-1.5 rounded-full bg-ink-500" />
             </div>
-          </div>
-        )}
+          )}
 
-        <div ref={bottom} />
+          {approval && (
+            <div className="mt-6 rounded-2xl bg-navy-900 p-4 text-white sm:p-5">
+              <p className="text-[13px] font-semibold uppercase tracking-[2px] text-copper-300">You&apos;re the owner now</p>
+              <p className="mt-2 text-sm leading-relaxed text-navy-200">
+                The agent drafted a reply with a price from the sample price sheet. Prices never go out without the
+                owner&apos;s OK, so this would normally wait in Slack for a click. Approve it to send it to the customer
+                (you), or reject it and the lead is handed to a person.
+              </p>
+              <blockquote className="mt-3 whitespace-pre-wrap rounded-xl border-l-4 border-copper-300 bg-white px-3.5 py-2.5 text-sm text-navy-900">
+                {approval.reply}
+              </blockquote>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  onClick={() => post("approval", { approved: true })}
+                  disabled={working}
+                  className="rounded-lg bg-copper-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-copper-700 disabled:opacity-60"
+                >
+                  Approve and send
+                </button>
+                <button
+                  onClick={() => post("approval", { approved: false })}
+                  disabled={working}
+                  className="rounded-lg border border-navy-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-red-300 hover:text-red-200 disabled:opacity-60"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          )}
 
-        {error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          <div ref={bottom} />
 
-        <form onSubmit={send} className="mt-6 border-t border-stone-200 pt-4">
+          {error && <p className="mt-4 rounded-[10px] bg-red-50 px-3 py-2.5 text-sm text-red-700">{error}</p>}
+        </div>
+
+        <form onSubmit={send} className="border-t border-sand-100 bg-sand-50/60 px-4 py-4 sm:px-6">
           <label htmlFor="reply" className="sr-only">Your reply</label>
-          <div className="flex gap-2">
+          <div className="flex items-end gap-2">
             <textarea
               id="reply"
               value={draft}
@@ -170,17 +169,17 @@ export function ThreadView({ token, initial, maxMessages }: { token: string; ini
               maxLength={2000}
               rows={2}
               placeholder={left === 0 ? "This demo thread is full." : "Write back as the customer..."}
-              className="min-h-11 flex-1 resize-y rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-copper-500 focus:ring-2 focus:ring-copper-100 disabled:bg-stone-100"
+              className="min-h-11 min-w-0 flex-1 resize-y rounded-[18px] border border-sand-300 bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none transition placeholder:text-ink-400 focus:border-copper-600 focus:ring-2 focus:ring-copper-100 disabled:bg-sand-100 sm:text-sm"
             />
             <button
               type="submit"
               disabled={working || !draft.trim() || left === 0}
-              className="self-end rounded-lg bg-copper-600 px-4 py-2 text-sm font-semibold text-white hover:bg-copper-700 disabled:opacity-50"
+              className="rounded-[10px] bg-copper-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-copper-700 disabled:opacity-50"
             >
               Send
             </button>
           </div>
-          <p className="mt-2 text-xs text-stone-400">
+          <p className="mt-2 text-xs text-ink-500">
             {left} of {maxMessages} demo messages left.
             {!agentReplies && " A person has this conversation now, so the agent won't reply."}
           </p>
@@ -190,8 +189,12 @@ export function ThreadView({ token, initial, maxMessages }: { token: string; ini
       <aside className="space-y-4 lg:sticky lg:top-6">
         <LeadFacts lead={lead}>
           {nextIn !== null && (
-            <div className="mt-4 rounded-lg bg-sky-50 p-3 text-xs text-sky-800">
-              <p className="font-semibold">
+            <div className="mt-4 rounded-xl border border-copper-200 bg-copper-50 p-3 text-xs text-copper-900">
+              <p className="flex items-center gap-1.5 text-sm font-semibold">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B85A22" strokeWidth="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
                 {nextIn > 0 ? `Next follow-up in about ${nextIn}s` : "Follow-up going out now..."}
               </p>
               <p className="mt-1">
@@ -236,11 +239,14 @@ function Tips({ status, endState }: { status: string; endState: string | null })
     ];
   }
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4 text-sm">
-      <h2 className="font-semibold">Things to try</h2>
-      <ul className="mt-2 list-disc space-y-1 pl-5 text-stone-600">
+    <div className="rounded-2xl border border-sand-200 bg-white p-5 text-sm">
+      <h2 className="font-display text-lg font-extrabold">Things to try</h2>
+      <ul className="mt-3 space-y-2 text-ink-600">
         {tips.map((t) => (
-          <li key={t}>{t}</li>
+          <li key={t} className="flex gap-2.5">
+            <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-copper-600" aria-hidden="true" />
+            {t}
+          </li>
         ))}
       </ul>
     </div>
