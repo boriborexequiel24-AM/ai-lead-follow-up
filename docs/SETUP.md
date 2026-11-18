@@ -42,7 +42,7 @@ This needs its own Slack app: a Slack app has only one interactivity URL, and th
   ```
 - [ ] **Install to Workspace**, then copy the bot token (`xoxb-...`) into `SLACK_BOT_TOKEN` and the **Signing Secret** (Basic Information) into `SLACK_SIGNING_SECRET`.
 - [ ] Create `#lead-approvals` (price approvals) and `#lead-alerts` (emergencies and errors), and copy their channel IDs into `.env`. With the `channels:manage` and `channels:read` scopes, Claude can do this step with the bot token (done this way on 2026-11-17).
-- [ ] Interactivity gets turned on in phase 6, once the approval workflow exists.
+- [ ] After deploying the workflows, open the app's **Interactivity & Shortcuts** page, switch it on, set the Request URL to `{N8N_BASE_URL}/webhook/lead-slack-actions`, and save. This is what makes the Approve / Reject buttons work. Test with `python scripts/test_approval.py`.
 
 ## 5. Gmail
 **Anything this label picks up becomes a lead the agent replies to.** Treat applying it as "send this to the agent".
