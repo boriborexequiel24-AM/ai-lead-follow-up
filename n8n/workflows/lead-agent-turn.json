@@ -472,7 +472,7 @@
         300
       ],
       "parameters": {
-        "jsCode": "// After the reply is stored: the email to send and the Slack posts to make.\n// One item per side effect; none means nothing else to do.\nconst config = $('Config').first().json;\nconst input = $('Validate input').first().json;\nconst ctx = $('Get agent context').first().json;\nconst parsed = $('Parse decision').first().json;\nconst applied = $('Apply decision').first().json;\nconst lead = ctx.lead;\nconst facts = parsed.facts;\n\nconst out = [];\nconst who = `${lead.name || 'Unknown'} (${lead.email || lead.phone || 'no contact'}${lead.phone && lead.email ? ', ' + lead.phone : ''}, zip ${lead.zip || facts.zip || 'unknown'})`;\nconst quote = text => String(text || '').split('\\n').map(l => '> ' + l).join('\\n');\n\n// Email leads get their reply by email, but only at an address on the allow-list.\nif (applied.message_status === 'sent' && applied.channel === 'email') {\n  const to = String(lead.email || '').toLowerCase();\n  if (config.allowlist.includes(to)) {\n    out.push({ json: { kind: 'email', to, subject: lead.subject, reply: applied.reply,\n                       thread_id: input.email_thread_id, in_reply_to: input.in_reply_to } });\n  } else {\n    out.push({ json: { kind: 'slack', channel: config.alerts_channel,\n      text: `:no_entry: Reply to ${to} was not emailed: the address isn't on OUTBOUND_EMAIL_ALLOWLIST.` } });\n  }\n}\n\nif (applied.final_action === 'escalate_emergency') {\n  out.push({ json: { kind: 'slack', channel: config.alerts_channel,\n    text: `:rotating_light: *Emergency lead: call now.* ${who}\\n${facts.summary}\\n${applied.owner_note || ''}` } });\n}\nif (applied.final_action === 'hand_off') {\n  const why = (applied.violations || []).length\n    ? `The agent's reply was blocked: ${applied.violations.join('; ')}.`\n    : (applied.owner_note || parsed.decision.reason);\n  out.push({ json: { kind: 'slack', channel: config.alerts_channel,\n    text: `:raising_hand: *Lead needs you.* ${who}\\n${facts.summary}\\n${why}` } });\n}\nif (applied.approval_id) {\n  out.push({ json: { kind: 'slack', channel: config.approvals_channel,\n    text: `:moneybag: *Price waiting for approval.* ${who}\\n${facts.summary}\\nDraft reply:\\n${quote(applied.reply)}` } });\n}\nreturn out;"
+        "jsCode": "// Slack layout for a price waiting for the owner's approval. Pasted into the\n// n8n Code nodes by scripts/build_n8n_workflows.py, so workflow 1 (posting\n// the draft) and workflow 3 (showing the outcome) always look the same.\n\nfunction whoLine(lead) {\n  const contact = [lead.email, lead.phone].filter(Boolean).join(', ') || 'no contact';\n  return `${lead.name || 'Unknown'} (${contact}, zip ${lead.zip || 'unknown'})`;\n}\n\nfunction priceApprovalBlocks(p, outcome) {\n  const quote = text => String(text || '').split('\\n').map(line => '>' + line).join('\\n');\n  const blocks = [\n    { type: 'section', text: { type: 'mrkdwn', text: `:moneybag: *Price waiting for approval*\\n${p.who}\\n${p.summary || ''}` } },\n    { type: 'section', text: { type: 'mrkdwn', text: `*Draft reply to the customer*\\n${quote(p.reply)}` } },\n  ];\n  if (outcome) {\n    blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: outcome }] });\n  } else {\n    blocks.push({\n      type: 'actions',\n      elements: [\n        { type: 'button', style: 'primary', action_id: 'approve_price', value: String(p.approval_id),\n          text: { type: 'plain_text', text: 'Approve and send' } },\n        { type: 'button', style: 'danger', action_id: 'reject_price', value: String(p.approval_id),\n          text: { type: 'plain_text', text: 'Reject' },\n          confirm: {\n            title: { type: 'plain_text', text: 'Reject this price?' },\n            text: { type: 'mrkdwn', text: 'Nothing is sent to the customer and the lead is handed to you.' },\n            confirm: { type: 'plain_text', text: 'Reject' },\n            deny: { type: 'plain_text', text: 'Cancel' },\n          } },\n      ],\n    });\n  }\n  return blocks;\n}\n\n// After the reply is stored: the email to send and the Slack posts to make.\n// One item per side effect; none means nothing else to do.\nconst config = $('Config').first().json;\nconst input = $('Validate input').first().json;\nconst ctx = $('Get agent context').first().json;\nconst parsed = $('Parse decision').first().json;\nconst applied = $('Apply decision').first().json;\nconst lead = ctx.lead;\nconst facts = parsed.facts;\n\nconst out = [];\nconst who = whoLine({ ...lead, zip: lead.zip || facts.zip });\n\n// Email leads get their reply by email, but only at an address on the allow-list.\nif (applied.message_status === 'sent' && applied.channel === 'email') {\n  const to = String(lead.email || '').toLowerCase();\n  if (config.allowlist.includes(to)) {\n    out.push({ json: { kind: 'email', to, subject: lead.subject, reply: applied.reply,\n                       thread_id: input.email_thread_id, in_reply_to: input.in_reply_to } });\n  } else {\n    out.push({ json: { kind: 'slack', channel: config.alerts_channel,\n      text: `:no_entry: Reply to ${to} was not emailed: the address isn't on OUTBOUND_EMAIL_ALLOWLIST.` } });\n  }\n}\n\nif (applied.final_action === 'escalate_emergency') {\n  out.push({ json: { kind: 'slack', channel: config.alerts_channel,\n    text: `:rotating_light: *Emergency lead: call now.* ${who}\\n${facts.summary}\\n${applied.owner_note || ''}` } });\n}\nif (applied.final_action === 'hand_off') {\n  const why = (applied.violations || []).length\n    ? `The agent's reply was blocked: ${applied.violations.join('; ')}.`\n    : (applied.owner_note || parsed.decision.reason);\n  out.push({ json: { kind: 'slack', channel: config.alerts_channel,\n    text: `:raising_hand: *Lead needs you.* ${who}\\n${facts.summary}\\n${why}` } });\n}\nif (applied.approval_id) {\n  const p = { approval_id: applied.approval_id, who, summary: facts.summary, reply: applied.reply };\n  out.push({ json: { kind: 'approval', approval_id: applied.approval_id, channel: config.approvals_channel,\n    text: `Price waiting for approval: ${who}`, blocks: priceApprovalBlocks(p, null) } });\n}\nreturn out;"
       }
     },
     {
@@ -497,7 +497,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "ba8cb83b-0d57-53c4-baf0-223b4b5eff47",
+                    "id": "b456349d-8c10-548b-9003-94dc0af529ed",
                     "leftValue": "={{ $json.kind }}",
                     "rightValue": "email",
                     "operator": {
@@ -521,7 +521,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "fa53c82b-0fc7-5b5a-ab6d-08f4b379a687",
+                    "id": "5ccec2ff-5b74-58db-ad06-1492506f21e7",
                     "leftValue": "={{ $json.kind }}",
                     "rightValue": "slack",
                     "operator": {
@@ -534,6 +534,30 @@
               },
               "renameOutput": true,
               "outputKey": "slack"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d3a0c908-8efb-5a65-a87d-3ec2660a06b9",
+                    "leftValue": "={{ $json.kind }}",
+                    "rightValue": "approval",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "approval"
             }
           ]
         },
@@ -616,6 +640,65 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ channel: $json.channel, text: $json.text }) }}",
         "options": {}
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "9ce0a6fb-fa5e-5121-8705-4500168f2bfa",
+      "name": "Post approval",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4140,
+        740
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.channel, text: $json.text, blocks: $json.blocks }) }}",
+        "options": {}
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "5ea76aea-d46a-5c63-8bdd-acb52b615259",
+      "name": "Save approval message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4370,
+        740
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Config').first().json.supabase_url }}/rest/v1/approvals?id=eq.{{ $('Email or Slack?').item.json.approval_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept-Profile",
+              "value": "leads"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "leads"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ slack_ts: $json.ok ? $json.ts : null }) }}"
       },
       "onError": "continueRegularOutput"
     },
@@ -925,6 +1008,24 @@
         [
           {
             "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post approval": {
+      "main": [
+        [
+          {
+            "node": "Save approval message",
             "type": "main",
             "index": 0
           }

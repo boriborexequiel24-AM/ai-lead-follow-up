@@ -6,6 +6,8 @@
    applies the guardrails in the database, replies, and alerts Slack.
 2. Email intake: every minute, sends new lead-demo emails and replies in known
    lead threads to workflow 1 (scripts/email_intake_workflow.py).
+3. Price approval: the owner's Approve / Reject clicks in Slack
+   (scripts/approval_workflow.py).
 
 Output is saved to n8n/workflows/ (with private values replaced) so it is
 versioned in git.
@@ -169,6 +171,21 @@ def if_node(name: str, position, left: str, operator: dict) -> dict:
 IS_TRUE = {"type": "boolean", "operation": "true", "singleValue": True}
 
 
+def switch_on_kind(name: str, position, kinds: list[str]) -> dict:
+    """Switch node with one output per value of $json.kind, in the order given."""
+    rules = [{
+        "conditions": {
+            "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict", "version": 2},
+            "conditions": [{"id": node_id(f"{name}/{kind}"), "leftValue": "={{ $json.kind }}",
+                            "rightValue": kind, "operator": {"type": "string", "operation": "equals"}}],
+            "combinator": "and",
+        },
+        "renameOutput": True,
+        "outputKey": kind,
+    } for kind in kinds]
+    return node(name, "n8n-nodes-base.switch", 3.2, position, {"rules": {"values": rules}, "options": {}})
+
+
 def link(*names: str) -> dict:
     return {"main": [[{"node": n, "type": "main", "index": 0} for n in names]]}
 
@@ -322,7 +339,10 @@ return [{
 }];"""
 
 
-PLAN_EFFECTS_CODE = r"""// After the reply is stored: the email to send and the Slack posts to make.
+SLACK_BLOCKS_JS = (ROOT / "scripts" / "slack_blocks.js").read_text(encoding="utf-8")
+
+PLAN_EFFECTS_CODE = SLACK_BLOCKS_JS + r"""
+// After the reply is stored: the email to send and the Slack posts to make.
 // One item per side effect; none means nothing else to do.
 const config = $('Config').first().json;
 const input = $('Validate input').first().json;
@@ -333,8 +353,7 @@ const lead = ctx.lead;
 const facts = parsed.facts;
 
 const out = [];
-const who = `${lead.name || 'Unknown'} (${lead.email || lead.phone || 'no contact'}${lead.phone && lead.email ? ', ' + lead.phone : ''}, zip ${lead.zip || facts.zip || 'unknown'})`;
-const quote = text => String(text || '').split('\n').map(l => '> ' + l).join('\n');
+const who = whoLine({ ...lead, zip: lead.zip || facts.zip });
 
 // Email leads get their reply by email, but only at an address on the allow-list.
 if (applied.message_status === 'sent' && applied.channel === 'email') {
@@ -360,8 +379,9 @@ if (applied.final_action === 'hand_off') {
     text: `:raising_hand: *Lead needs you.* ${who}\n${facts.summary}\n${why}` } });
 }
 if (applied.approval_id) {
-  out.push({ json: { kind: 'slack', channel: config.approvals_channel,
-    text: `:moneybag: *Price waiting for approval.* ${who}\n${facts.summary}\nDraft reply:\n${quote(applied.reply)}` } });
+  const p = { approval_id: applied.approval_id, who, summary: facts.summary, reply: applied.reply };
+  out.push({ json: { kind: 'approval', approval_id: applied.approval_id, channel: config.approvals_channel,
+    text: `Price waiting for approval: ${who}`, blocks: priceApprovalBlocks(p, null) } });
 }
 return out;"""
 
@@ -441,23 +461,7 @@ def build_agent_workflow(env: dict) -> dict:
                 "reply: $json.message_status === 'sent' ? $json.reply : null, "
                 "seconds: $('Parse decision').first().json.seconds } }}"),
         code("Plan side effects", (x(16), y), PLAN_EFFECTS_CODE),
-        node("Email or Slack?", "n8n-nodes-base.switch", 3.2, (x(17), y), {
-            "rules": {"values": [
-                {"conditions": {
-                    "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict", "version": 2},
-                    "conditions": [{"id": node_id("switch/email"), "leftValue": "={{ $json.kind }}",
-                                    "rightValue": "email", "operator": {"type": "string", "operation": "equals"}}],
-                    "combinator": "and"},
-                 "renameOutput": True, "outputKey": "email"},
-                {"conditions": {
-                    "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict", "version": 2},
-                    "conditions": [{"id": node_id("switch/slack"), "leftValue": "={{ $json.kind }}",
-                                    "rightValue": "slack", "operator": {"type": "string", "operation": "equals"}}],
-                    "combinator": "and"},
-                 "renameOutput": True, "outputKey": "slack"},
-            ]},
-            "options": {},
-        }),
+        switch_on_kind("Email or Slack?", (x(17), y), ["email", "slack", "approval"]),
         code("Build email", (x(18), y), BUILD_EMAIL_CODE, per_item=True),
         gmail_request("Send email", (x(19), y), "POST",
                       "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
@@ -467,6 +471,15 @@ def build_agent_workflow(env: dict) -> dict:
                    "text: ':warning: The agent replied but the email could not be sent: ' + "
                    "String($json.error?.message ?? $json.error ?? 'unknown error').slice(0, 300) }) }}"),
         slack_post("Post to Slack", (x(18), row2), "={{ JSON.stringify({ channel: $json.channel, text: $json.text }) }}"),
+        # Phase 6: prices go to #lead-approvals with Approve / Reject buttons (workflow 3 handles the click).
+        slack_post("Post approval", (x(18), row3),
+                   "={{ JSON.stringify({ channel: $json.channel, text: $json.text, blocks: $json.blocks }) }}"),
+        supabase_request(
+            "Save approval message", (x(19), row3), "PATCH",
+            "/rest/v1/approvals?id=eq.{{ $('Email or Slack?').item.json.approval_id }}",
+            body="={{ JSON.stringify({ slack_ts: $json.ok ? $json.ts : null }) }}",
+            prefer="return=minimal", onError="continueRegularOutput",
+        ),
         # Error branch: the message is stored, but the agent couldn't answer.
         slack_post("Alert agent failed", (x(13), row3),
                    "={{ JSON.stringify({ channel: $('Config').first().json.alerts_channel, "
@@ -496,7 +509,8 @@ def build_agent_workflow(env: dict) -> dict:
         "Apply decision": branch(["Reply done"], ["Alert agent failed"]),
         "Reply done": link("Plan side effects"),
         "Plan side effects": link("Email or Slack?"),
-        "Email or Slack?": branch(["Build email"], ["Post to Slack"]),
+        "Email or Slack?": branch(["Build email"], ["Post to Slack"], ["Post approval"]),
+        "Post approval": link("Save approval message"),
         "Build email": link("Send email"),
         "Send email": branch([], ["Alert email failed"]),
         "Alert agent failed": link("Reply failed"),
@@ -604,6 +618,7 @@ def write_public_copy(env: dict, workflow: dict, path: Path) -> None:
         "SUPABASE_URL": "https://YOUR-PROJECT.supabase.co",
         "N8N_BASE_URL": "https://YOUR-N8N-DOMAIN",
         "N8N_WEBHOOK_SECRET": "YOUR-N8N-WEBHOOK-SECRET",
+        "SLACK_SIGNING_SECRET": "YOUR-SLACK-SIGNING-SECRET",
         "SLACK_APPROVALS_CHANNEL_ID": "YOUR-APPROVALS-CHANNEL-ID",
         "SLACK_ALERTS_CHANNEL_ID": "YOUR-ALERTS-CHANNEL-ID",
         "GMAIL_INTAKE_ADDRESS": "intake@example.com",
@@ -621,6 +636,7 @@ def write_public_copy(env: dict, workflow: dict, path: Path) -> None:
 
 
 def main() -> None:
+    from approval_workflow import OUTPUT as APPROVAL_OUTPUT, build_approval_workflow
     from email_intake_workflow import OUTPUT as EMAIL_OUTPUT, build_email_intake_workflow
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -631,10 +647,12 @@ def main() -> None:
     env = load_env()
     agent = build_agent_workflow(env)
     email = build_email_intake_workflow(env)
+    approval = build_approval_workflow(env)
     write_public_copy(env, agent, AGENT_OUTPUT)
     write_public_copy(env, email, EMAIL_OUTPUT)
+    write_public_copy(env, approval, APPROVAL_OUTPUT)
     if args.deploy:
-        deploy(env, [agent, email], args.activate)
+        deploy(env, [agent, email, approval], args.activate)
 
 
 if __name__ == "__main__":
