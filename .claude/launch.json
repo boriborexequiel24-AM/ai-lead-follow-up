@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "dashboard",
+      "name": "lead-dashboard",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "dashboard", "run", "dev", "--", "-p", "3100"],
       "port": 3100
