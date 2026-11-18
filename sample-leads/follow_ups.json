@@ -1,0 +1,64 @@
+[
+  {
+    "id": "F01-nudge-after-offer",
+    "follow_up": 1,
+    "lead": { "source": "form", "name": "Hannah Brooks", "email": "hbrooks@mail.example", "zip": "80237" },
+    "facts": { "is_real_lead": true, "trade": "hvac", "job_type": "maintenance", "urgency": "flexible", "wants_price": false,
+               "missing_info": [], "zip": "80237", "language": "en", "summary": "AC tune-up before summer, weekday afternoons" },
+    "turns": [
+      { "from": "lead", "at": "2026-04-22T13:00:00-06:00", "text": "Would like to get the AC checked before summer. Any weekday afternoon works for me." },
+      { "from": "agent", "at": "2026-04-22T13:00:20-06:00", "action": "offer_booking", "offered_slots": ["2026-04-28T13:00:00-06:00", "2026-04-29T15:00:00-06:00"], "text": "Hi Hannah, happy to get your AC tuned up. Would Tuesday Apr 28 at 1pm or Wednesday Apr 29 at 3pm work?" }
+    ],
+    "now": "2026-04-23T13:05:00-06:00",
+    "expected": { "action": "offer_booking" }
+  },
+  {
+    "id": "F02-still-need-zip",
+    "follow_up": 2,
+    "lead": { "source": "email", "name": "Luis Alvarez", "email": "luis.alvarez@mail.example" },
+    "facts": { "is_real_lead": true, "trade": "plumbing", "job_type": "repair", "urgency": "this_week", "wants_price": false,
+               "missing_info": ["location"], "zip": null, "language": "en", "summary": "Slow kitchen drain, no location yet" },
+    "turns": [
+      { "from": "lead", "at": "2026-03-04T09:12:00-07:00", "text": "Hi, our kitchen sink has been draining really slowly for a week. Can you send someone?" },
+      { "from": "agent", "at": "2026-03-04T09:12:30-07:00", "action": "ask_question", "text": "Hi Luis, sorry about the sink. What's your zip code, so we can confirm we cover your area?" },
+      { "from": "agent", "at": "2026-03-05T09:15:00-07:00", "action": "ask_question", "text": "Hi Luis, just checking in. If you send your zip code we can get someone out this week." }
+    ],
+    "now": "2026-03-07T09:20:00-07:00",
+    "expected": { "action": "ask_question" }
+  },
+  {
+    "id": "F03-last-after-approved-price",
+    "follow_up": 3,
+    "lead": { "source": "form", "name": "Tom Okafor", "email": "tom.okafor@mail.example", "zip": "80209" },
+    "facts": { "is_real_lead": true, "trade": "plumbing", "job_type": "install", "urgency": "flexible", "wants_price": true,
+               "missing_info": [], "zip": "80209", "language": "en", "summary": "Water heater replacement, got the estimate" },
+    "turns": [
+      { "from": "lead", "at": "2026-03-10T10:20:00-06:00", "text": "Our water heater is 15 years old. What would a new 50 gallon gas one cost roughly?" },
+      { "from": "agent", "at": "2026-03-10T10:48:00-06:00", "action": "draft_price", "approved": true, "text": "Hi Tom, a 50 gallon gas water heater replacement usually runs $1,400 to $2,200, including haul-away and the permit. Want to set up a free in-home estimate?" },
+      { "from": "agent", "at": "2026-03-11T10:50:00-06:00", "action": "offer_booking", "offered_slots": ["2026-03-12T10:00:00-06:00", "2026-03-13T13:00:00-06:00"], "text": "Hi Tom, we have Thursday Mar 12 at 10am or Friday Mar 13 at 1pm for the estimate. Would either work?" },
+      { "from": "agent", "at": "2026-03-13T10:55:00-06:00", "action": "offer_booking", "offered_slots": ["2026-03-16T08:00:00-06:00"], "text": "Hi Tom, we still have openings next week, including Monday Mar 16 at 8am. Financing is available on replacements if that helps." }
+    ],
+    "now": "2026-03-17T11:00:00-06:00",
+    "expected": {
+      "action": "offer_booking",
+      "also_ok": ["close"],
+      "reply_checks": [{ "label": "doesn't restate the price", "pattern": "\\$\\s?\\d", "must_not": true }]
+    }
+  },
+  {
+    "id": "F04-spanish",
+    "follow_up": 1,
+    "lead": { "source": "form", "name": "Rosa Delgado", "email": "rosa.delgado@mail.example", "zip": "80204" },
+    "facts": { "is_real_lead": true, "trade": "plumbing", "job_type": "repair", "urgency": "this_week", "wants_price": false,
+               "missing_info": [], "zip": "80204", "language": "es", "summary": "No hot water since yesterday" },
+    "turns": [
+      { "from": "lead", "at": "2026-10-05T18:30:00-06:00", "text": "Hola, mi calentador de agua no funciona desde ayer. ¿Pueden venir esta semana?" },
+      { "from": "agent", "at": "2026-10-05T18:30:20-06:00", "action": "offer_booking", "offered_slots": ["2026-10-06T08:00:00-06:00", "2026-10-06T13:00:00-06:00"], "text": "Hola Rosa, podemos ayudarle. ¿Le funciona el martes 6 de octubre a las 8am o a la 1pm?" }
+    ],
+    "now": "2026-10-06T18:35:00-06:00",
+    "expected": {
+      "action": "offer_booking",
+      "reply_checks": [{ "label": "follows up in Spanish", "pattern": "\\b(hola|gracias|podemos|cita|semana|horario|disponible)\\b" }]
+    }
+  }
+]

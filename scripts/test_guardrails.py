@@ -105,7 +105,9 @@ def run_tests() -> list[tuple[str, bool, str]]:
     rpc("refresh_slots")
     context_lead = new_lead()
     context = rpc("get_agent_context", p_lead_id=context_lead)
-    slots = context["open_slots"]
+    slots = [s["time"] for s in context["open_slots"]]
+    test("every open slot comes with a label", all(s.get("label") for s in context["open_slots"]) and context.get("today"),
+         context["open_slots"][:2])
     test("context has company, prices and open slots",
          context["company"]["name"] == "Copperline Plumbing & Air" and len(context["price_sheet"]) == 16 and len(slots) >= 6,
          f"{len(slots)} slots")
@@ -160,7 +162,14 @@ def run_tests() -> list[tuple[str, bool, str]]:
     # These pass a fixed "now", so they offer the latest open slot, which is after it.
     lead = new_lead()
     r = check(lead, decision("offer_booking", offered_slots=slots[-1:]), trigger="follow_up", now="2026-11-18T22:30:00-07:00")
-    test("a follow-up at 10:30pm waits until 8am",
+    test("on the demo clock, quiet hours don't apply", r["final_action"] == "offer_booking" and r["send_after"] is None, r)
+    clock = table("settings", "id=eq.1&select=clock_mode")[0]["clock_mode"]
+    request("PATCH", "settings?id=eq.1", {"clock_mode": "real"})
+    try:
+        r = check(lead, decision("offer_booking", offered_slots=slots[-1:]), trigger="follow_up", now="2026-11-18T22:30:00-07:00")
+    finally:
+        request("PATCH", "settings?id=eq.1", {"clock_mode": clock})
+    test("on the real clock, a follow-up at 10:30pm waits until 8am",
          r["final_action"] == "offer_booking" and r["send_after"] is not None and r["send_after"].startswith("2026-11-19T15:00:00"), r["send_after"])
     r = check(lead, decision("offer_booking", offered_slots=slots[-1:]), trigger="follow_up", now="2026-11-18T11:00:00-07:00")
     test("a follow-up at 11am goes now", r["final_action"] == "offer_booking" and r["send_after"] is None, r)

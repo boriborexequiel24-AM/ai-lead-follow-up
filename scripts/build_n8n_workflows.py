@@ -8,6 +8,10 @@
    lead threads to workflow 1 (scripts/email_intake_workflow.py).
 3. Price approval: the owner's Approve / Reject clicks in Slack
    (scripts/approval_workflow.py).
+4. Follow-ups: every minute, follows up leads that went quiet, on the demo
+   or real clock (scripts/follow_up_workflow.py).
+5. Cleanup: hourly, deletes old visitor leads and refreshes visit slots
+   (scripts/cleanup_workflow.py).
 
 Output is saved to n8n/workflows/ (with private values replaced) so it is
 versioned in git.
@@ -301,6 +305,7 @@ const payload = {{
   faq: ctx.faq,
   price_sheet: ctx.price_sheet,
   now: ctx.now,
+  today: ctx.today,
   facts,
   open_slots: ctx.open_slots,
   conversation: ctx.conversation,
@@ -637,6 +642,8 @@ def write_public_copy(env: dict, workflow: dict, path: Path) -> None:
 
 def main() -> None:
     from approval_workflow import OUTPUT as APPROVAL_OUTPUT, build_approval_workflow
+    from cleanup_workflow import OUTPUT as CLEANUP_OUTPUT, build_cleanup_workflow
+    from follow_up_workflow import OUTPUT as FOLLOW_UP_OUTPUT, build_follow_up_workflow
     from email_intake_workflow import OUTPUT as EMAIL_OUTPUT, build_email_intake_workflow
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -648,11 +655,14 @@ def main() -> None:
     agent = build_agent_workflow(env)
     email = build_email_intake_workflow(env)
     approval = build_approval_workflow(env)
-    write_public_copy(env, agent, AGENT_OUTPUT)
-    write_public_copy(env, email, EMAIL_OUTPUT)
-    write_public_copy(env, approval, APPROVAL_OUTPUT)
+    follow_up = build_follow_up_workflow(env)
+    cleanup = build_cleanup_workflow(env)
+    built = [(agent, AGENT_OUTPUT), (email, EMAIL_OUTPUT), (approval, APPROVAL_OUTPUT),
+             (follow_up, FOLLOW_UP_OUTPUT), (cleanup, CLEANUP_OUTPUT)]
+    for workflow, output in built:
+        write_public_copy(env, workflow, output)
     if args.deploy:
-        deploy(env, [agent, email, approval], args.activate)
+        deploy(env, [w for w, _ in built], args.activate)
 
 
 if __name__ == "__main__":

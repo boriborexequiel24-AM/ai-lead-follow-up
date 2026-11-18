@@ -24,6 +24,7 @@ import argparse
 import json
 import re
 import time
+import unicodedata
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -40,6 +41,7 @@ READ_PROMPT = (AGENT / "read_prompt.md").read_text(encoding="utf-8")
 READ_SCHEMA = json.loads((AGENT / "read_schema.json").read_text(encoding="utf-8"))
 DECIDE_PROMPT = (AGENT / "decide_prompt.md").read_text(encoding="utf-8")
 DECIDE_SCHEMA = json.loads((AGENT / "decide_schema.json").read_text(encoding="utf-8"))
+FOLLOW_UP_PROMPT = (AGENT / "follow_up_prompt.md").read_text(encoding="utf-8")
 
 # USD per 1M tokens: (input, cached input, output).
 # Source: developers.openai.com/api/docs/pricing, standard tier, checked 2026-11-13.
@@ -114,10 +116,20 @@ def case_inputs(case: dict) -> dict:
     else:
         lead = {k: case[k] for k in ("source", "name", "email", "phone", "zip", "subject") if case.get(k)}
         conversation = [{"from": "lead", "at": case["received_at"], "text": case["message"]}]
-    now = conversation[-1]["at"]
+    now = case.get("now") or conversation[-1]["at"]
     offered = [s for t in conversation for s in t.get("offered_slots", [])]
-    open_slots = sorted(set(make_slots(datetime.fromisoformat(now)) + offered))
-    return {"lead": lead, "conversation": conversation, "now": now, "open_slots": open_slots}
+    times = sorted(set(make_slots(datetime.fromisoformat(now)) + offered))
+    # Same shape as leads.get_agent_context: each slot with a ready-made label.
+    open_slots = [{"time": s, "label": slot_label(datetime.fromisoformat(s))} for s in times]
+    today = datetime.fromisoformat(now)
+    return {"lead": lead, "conversation": conversation, "now": now, "open_slots": open_slots,
+            "today": f"{today:%A} {today:%b} {today.day}, {today.year}"}
+
+
+def slot_label(when: datetime) -> str:
+    """Like leads.slot_label in the database, e.g. "Wednesday Oct 7 at 8am"."""
+    hour = when.hour % 12 or 12
+    return f"{when:%A} {when:%b} {when.day} at {hour}{'am' if when.hour < 12 else 'pm'}"
 
 
 # ---------- Calling OpenAI ----------
@@ -166,8 +178,30 @@ def cost_usd(model: str, usage: dict) -> float | None:
     return (fresh * price_in + cached * price_cached + usage.get("output_tokens", 0) * price_out) / 1_000_000
 
 
+def run_follow_up(api_key: str, model: str, effort: str, company: dict, case: dict) -> dict:
+    """A scheduled follow-up: no read step (the facts are stored on the lead), just the follow-up prompt."""
+    inputs = case_inputs(case)
+    facts = dict(case["facts"])
+    facts["in_service_area"] = None if not facts.get("zip") else facts["zip"] in company["service_area_zips"]
+    decide = call_openai(api_key, model, effort, FOLLOW_UP_PROMPT, {
+        "follow_up_number": case["follow_up"],
+        "company": company["company"],
+        "faq": company["faq"],
+        "price_sheet": company["price_sheet"],
+        "now": inputs["now"],
+        "today": inputs["today"],
+        "facts": facts,
+        "open_slots": inputs["open_slots"],
+        "conversation": inputs["conversation"],
+    }, DECIDE_SCHEMA, "next_step")
+    return {"facts": facts, "decision": decide["data"], "open_slots": [s["time"] for s in inputs["open_slots"]],
+            "seconds": decide["seconds"], "cost": cost_usd(model, decide["usage"]) or 0}
+
+
 def run_agent(api_key: str, model: str, effort: str, company: dict, case: dict) -> dict:
     """The full agent turn: read, service-area rule, decide."""
+    if "follow_up" in case:
+        return run_follow_up(api_key, model, effort, company, case)
     inputs = case_inputs(case)
     read = call_openai(api_key, model, effort, READ_PROMPT,
                        {"lead": inputs["lead"], "conversation": inputs["conversation"]}, READ_SCHEMA, "lead_facts")
@@ -180,6 +214,7 @@ def run_agent(api_key: str, model: str, effort: str, company: dict, case: dict) 
         "faq": company["faq"],
         "price_sheet": company["price_sheet"],
         "now": inputs["now"],
+        "today": inputs["today"],
         "facts": facts,
         "open_slots": inputs["open_slots"],
         "conversation": inputs["conversation"],
@@ -187,7 +222,7 @@ def run_agent(api_key: str, model: str, effort: str, company: dict, case: dict) 
     return {
         "facts": facts,
         "decision": decide["data"],
-        "open_slots": inputs["open_slots"],
+        "open_slots": [s["time"] for s in inputs["open_slots"]],
         "seconds": read["seconds"] + decide["seconds"],
         "cost": sum(c for c in (cost_usd(model, read["usage"]), cost_usd(model, decide["usage"])) if c is not None),
     }
@@ -234,7 +269,30 @@ def score(case: dict, result: dict) -> dict:
     if decision["offered_slots"] or decision["slot"]:
         offered = set(decision["offered_slots"]) | ({decision["slot"]} if decision["slot"] else set())
         checks["slots are real"] = offered <= set(result["open_slots"])
+        checks["weekdays are right"] = weekdays_match(decision["reply"], offered)
     return checks
+
+
+WEEKDAYS = {
+    "en": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+    "es": ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"],
+}
+
+
+def weekdays_match(reply: str, slots: set[str]) -> bool:
+    """Every weekday named in the reply belongs to one of the offered slots.
+
+    Catches the model working out a weekday wrong ("martes 7 de octubre" for a Wednesday)."""
+    text = unicodedata.normalize("NFKD", reply.lower()).encode("ascii", "ignore").decode()
+    allowed = set()
+    for s in slots:
+        try:
+            day = datetime.fromisoformat(s).weekday()
+        except ValueError:
+            continue
+        allowed |= {names[day] for names in WEEKDAYS.values()}
+    named = {w for names in WEEKDAYS.values() for w in names if re.search(rf"{w}", text)}
+    return named <= allowed
 
 
 # ---------- Running ----------
@@ -276,7 +334,7 @@ def write_report(summaries: list[dict], rows: list[dict], effort: str) -> None:
         "",
         f"Run on {datetime.now():%Y-%m-%d %H:%M} with `scripts/eval_agent.py` (reasoning effort: {effort}).",
         "Each case runs the full agent turn: read the lead, check the service area, pick the next step.",
-        "The answer key is in `sample-leads/` (leads.json and conversations.json).",
+        "The answer key is in `sample-leads/` (leads.json, conversations.json, follow_ups.json).",
         "",
         "| Model | Right action | All checks | Perfect cases | Avg time | Cost per lead turn | Errors |",
         "|---|---|---|---|---|---|---|",
@@ -318,7 +376,8 @@ def main() -> None:
     env = load_env()
     company = fetch_company(env)
     cases = [*json.loads((SAMPLES / "leads.json").read_text(encoding="utf-8")),
-             *json.loads((SAMPLES / "conversations.json").read_text(encoding="utf-8"))]
+             *json.loads((SAMPLES / "conversations.json").read_text(encoding="utf-8")),
+             *json.loads((SAMPLES / "follow_ups.json").read_text(encoding="utf-8"))]
     if args.only:
         cases = [c for c in cases if any(c["id"].startswith(p) for p in args.only)]
 

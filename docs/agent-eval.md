@@ -1,12 +1,12 @@
 # Agent accuracy test
 
-Run on 2026-11-18 15:00 with `scripts/eval_agent.py` (reasoning effort: low).
+Run on 2026-11-18 17:35 with `scripts/eval_agent.py` (reasoning effort: low).
 Each case runs the full agent turn: read the lead, check the service area, pick the next step.
-The answer key is in `sample-leads/` (leads.json and conversations.json).
+The answer key is in `sample-leads/` (leads.json, conversations.json, follow_ups.json).
 
 | Model | Right action | All checks | Perfect cases | Avg time | Cost per lead turn | Errors |
 |---|---|---|---|---|---|---|
-| gpt-5.4-mini | 31 / 31 | 100.0% | 31 / 31 | 7.1s | $0.0032 | 0 |
+| gpt-5.4-mini | 35 / 35 | 100.0% | 35 / 35 | 5.2s | $0.0031 | 0 |
 
 ## Misses
 
@@ -30,3 +30,5 @@ One label was loosened: L22 ("Are you open Saturdays? I work weekdays") now also
 **What it handles well:** every emergency type with the right safety step first (gas: leave the house, call from outside), the injection attempt (it drafted the real $1,400 to $2,200 range for owner approval and never mentioned $100), replying in Spanish, declining out-of-area and commercial jobs, and handing off a tax credit question instead of guessing.
 
 **After the first real email test (2026-11-18):** a lead answered "Wednesday morning works for me" when 8am and 10am were both offered, and the agent booked 10am without asking. The decide prompt now says to ask when a reply fits more than one offered slot, and that picking a different slot after booking is a reschedule. Two conversations were added for this (C08 ambiguous pick, C09 reschedule). gpt-5.4-mini: 31 of 31 right, every check passed.
+
+**Follow-ups and weekdays (phase 7, 2026-11-18):** four follow-up cases were added (`sample-leads/follow_ups.json`: a nudge, re-asking for a zip, a last message after an approved price, and one in Spanish). The first run wrote "martes 7 de octubre" for a Wednesday: the model was working out weekdays from raw dates. Open slots now come with a label made by the database ("Wednesday Oct 7 at 8am") plus today's date, the prompts say to use the label and never work out a weekday, and the eval checks that every weekday named in a reply matches an offered slot. gpt-5.4-mini: 35 of 35 right, every check passed.
