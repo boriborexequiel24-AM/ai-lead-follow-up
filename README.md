@@ -2,7 +2,7 @@
 
 An AI agent for a home services business (plumbing + HVAC) that answers every new lead within seconds and keeps following up until the lead books, says no, or goes quiet. The owner only steps in for prices, emergencies, and anything the agent isn't sure about.
 
-**Status:** working end to end; the demo site is built and about to go live. A live demo link will go here.
+**Live demo:** https://dashboard-five-beige-69.vercel.app
 
 ## Try the demo
 On the demo site you play the customer of Copperline Plumbing & Air, a made-up company:
