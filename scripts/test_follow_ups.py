@@ -66,6 +66,10 @@ def run_tests() -> list[tuple[str, bool, str]]:
         time.sleep(70)
         again = table("leads", f"id=eq.{lead_id}&select=follow_ups_sent")[0]["follow_ups_sent"]
         test("no second follow-up before its gap is up", again == 1, again)
+        # Follow-up 2 is due 2 demo days (2 minutes) after follow-up 1. It used
+        # to wait for the 5-minute claim from follow-up 1 to run out.
+        second = wait_for(lambda: table("leads", f"id=eq.{lead_id}&select=follow_ups_sent")[0]["follow_ups_sent"] >= 2, 120)
+        test("follow-up 2 arrives on time (the claim from follow-up 1 is released)", second, second)
 
     # After 3 unanswered follow-ups the lead is closed, with no AI call.
     status, body = form_lead("Need a toilet repaired, it rocks when you sit on it.")

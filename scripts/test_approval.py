@@ -25,11 +25,12 @@ from test_n8n_agent import form_lead
 WEBHOOK = ENV["N8N_BASE_URL"].rstrip("/") + "/webhook/lead-slack-actions"
 
 
-def click(approval_id: int, approve: bool, slack_ts: str | None, secret: str | None = None) -> int:
+def click(approval_id: int, approve: bool, slack_ts: str | None, secret: str | None = None,
+          user: str = "approval-test") -> int:
     """Send a Slack block_actions payload signed with the app's signing secret."""
     payload = {
         "type": "block_actions",
-        "user": {"id": "UTEST", "name": "approval-test"},
+        "user": {"id": "UTEST", "name": user},
         "channel": {"id": ENV["SLACK_APPROVALS_CHANNEL_ID"]},
         "message": {"ts": slack_ts},
         "actions": [{"action_id": "approve_price" if approve else "reject_price", "value": str(approval_id)}],

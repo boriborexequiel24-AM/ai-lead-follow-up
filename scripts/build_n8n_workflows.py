@@ -12,6 +12,8 @@
    or real clock (scripts/follow_up_workflow.py).
 5. Cleanup: hourly, deletes old visitor leads and refreshes visit slots
    (scripts/cleanup_workflow.py).
+6. Demo owner action: a demo site visitor playing the owner approves or
+   rejects their own price (scripts/owner_action_workflow.py).
 
 Output is saved to n8n/workflows/ (with private values replaced) so it is
 versioned in git.
@@ -645,6 +647,7 @@ def main() -> None:
     from cleanup_workflow import OUTPUT as CLEANUP_OUTPUT, build_cleanup_workflow
     from follow_up_workflow import OUTPUT as FOLLOW_UP_OUTPUT, build_follow_up_workflow
     from email_intake_workflow import OUTPUT as EMAIL_OUTPUT, build_email_intake_workflow
+    from owner_action_workflow import OUTPUT as OWNER_OUTPUT, build_owner_action_workflow
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--deploy", action="store_true", help="create or update the workflows in n8n")
@@ -657,8 +660,9 @@ def main() -> None:
     approval = build_approval_workflow(env)
     follow_up = build_follow_up_workflow(env)
     cleanup = build_cleanup_workflow(env)
+    owner = build_owner_action_workflow(env)
     built = [(agent, AGENT_OUTPUT), (email, EMAIL_OUTPUT), (approval, APPROVAL_OUTPUT),
-             (follow_up, FOLLOW_UP_OUTPUT), (cleanup, CLEANUP_OUTPUT)]
+             (follow_up, FOLLOW_UP_OUTPUT), (cleanup, CLEANUP_OUTPUT), (owner, OWNER_OUTPUT)]
     for workflow, output in built:
         write_public_copy(env, workflow, output)
     if args.deploy:

@@ -26,6 +26,7 @@ Later migrations in `supabase/migrations/` are run the same way, in name order.
 - [ ] Generate a new long random string for `N8N_WEBHOOK_SECRET`. Don't reuse the invoice one, so each demo can only call its own webhooks.
 - [ ] After the Supabase migrations and the Slack and Gmail steps below, deploy: `python scripts/build_n8n_workflows.py --deploy --activate`. It copies the Supabase, OpenAI and Gmail credentials from the invoice workflows, and creates this project's Slack and webhook-secret credentials from `.env` the first time.
 - [ ] Test: `python scripts/test_n8n_agent.py`, then email a lead from an allow-listed address to the intake inbox and label it `lead-demo`. The reply should arrive in the same thread within about a minute. Then `python scripts/test_follow_ups.py` (about 5 minutes) checks the follow-ups and the cleanup.
+- [ ] Demo site: run `python scripts/sync_dashboard_env.py` (writes `dashboard/.env.local`), then `npm install` and `npm run dev` in `dashboard/`. Create the owner view's sample leads with `python scripts/seed_demo_leads.py`.
 - [ ] The demo clock is on by default (1 day = 1 minute). For a real client, run `update leads.settings set clock_mode = 'real' where id = 1;` in the SQL Editor.
 
 ## 4. Slack
