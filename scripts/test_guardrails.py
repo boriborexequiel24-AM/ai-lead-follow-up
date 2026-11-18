@@ -190,7 +190,13 @@ def run_tests() -> list[tuple[str, bool, str]]:
     test("apply confirm_booking: slot booked, lead booked",
          out["final_action"] == "confirm_booking" and row["status"] == "booked" and len(booked) == 1, (out, row))
     test("a booked slot is no longer offered", slots[0] not in rpc("open_slots"), "")
-    r = check(new_lead(), decision("confirm_booking", slot=slots[1]))
+    out = apply(lead, decision("confirm_booking", slot=slots[0]))
+    test("confirming the slot the lead already holds is fine", out["final_action"] == "confirm_booking", out)
+    out = apply(lead, decision("confirm_booking", slot=slots[1]))
+    booked = [b["starts_at"] for b in table("slots", f"booked_lead_id=eq.{lead}&select=starts_at")]
+    test("picking another offered slot moves the booking (one slot per lead)",
+         out["final_action"] == "confirm_booking" and len(booked) == 1 and slots[0] in rpc("open_slots"), (out, booked))
+    r = check(new_lead(), decision("confirm_booking", slot=slots[2]))
     test("booking a slot the lead was never offered becomes hand_off",
          r["final_action"] == "hand_off" and "slot was never offered to this lead" in r["violations"], r["violations"])
 

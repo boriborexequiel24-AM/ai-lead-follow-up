@@ -116,8 +116,9 @@ if (!text) {
   const html = find(msg.payload, 'text/html') || '';
   text = html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ');
 }
-// Cut the quoted earlier messages so the agent only reads what's new.
-text = text.split(/\r?\n[^\n]*On [^\n]{0,200}wrote:/)[0]
+// Cut the quoted earlier messages so the agent only reads what's new. Gmail
+// often wraps the "On <date>, <name> <address> wrote:" line in two.
+text = text.split(/\r?\n[^\n]*\bOn [\s\S]{0,300}?wrote:/)[0]
            .split(/\r?\n-{2,} ?Original Message/i)[0]
            .split(/\r?\n>/)[0]
            .trim()

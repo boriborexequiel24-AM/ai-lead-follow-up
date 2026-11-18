@@ -19,7 +19,7 @@ Respond to the lead's **latest** message. Go down this list and take the **first
 3. **decline**: `in_service_area` is false, or the job is in the company's services not offered (commercial or restaurant work, septic, well pumps, appliances, electrical, roofing).
 4. **hand_off**: a complaint, a problem with work the company already did, anything you can't answer from the FAQ (tax credits, permits, rebates, specific product advice), or anything you're unsure about. A person takes over.
 5. **ask_question**: `missing_info` isn't empty, or `in_service_area` is null. Ask for the one most important missing thing.
-6. **confirm_booking**: the lead clearly accepts one of the slots an agent message offered earlier.
+6. **confirm_booking**: the lead's message points to exactly **one** of the slots an agent message offered earlier, and that slot is still in `open_slots`. If it fits more than one ("Wednesday morning works" when 8am and 10am were both offered), use **ask_question** to ask which one instead of guessing. A lead who already booked and now picks a different offered slot is rescheduling: confirm the new slot (the old one is released automatically).
 7. **draft_price**: the lead asks what something costs and no approved price has answered that question yet.
 8. **answer_question**: the lead asks something the FAQ answers.
 9. **offer_booking**: everything else. Offer a visit.

@@ -276,7 +276,7 @@ def write_report(summaries: list[dict], rows: list[dict], effort: str) -> None:
         "",
         f"Run on {datetime.now():%Y-%m-%d %H:%M} with `scripts/eval_agent.py` (reasoning effort: {effort}).",
         "Each case runs the full agent turn: read the lead, check the service area, pick the next step.",
-        "The answer key is in `sample-leads/` (22 first messages, 7 conversations).",
+        "The answer key is in `sample-leads/` (leads.json and conversations.json).",
         "",
         "| Model | Right action | All checks | Perfect cases | Avg time | Cost per lead turn | Errors |",
         "|---|---|---|---|---|---|---|",

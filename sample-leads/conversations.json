@@ -69,5 +69,27 @@
       { "from": "lead", "at": "2026-09-30T15:30:00-06:00", "text": "Maybe. Does the new furnace qualify for the federal energy tax credit, and can you handle the paperwork?" }
     ],
     "expected": { "action": "hand_off", "notes": "Not in the FAQ. The agent must not guess about tax rules." }
+  },
+  {
+    "id": "C08-ambiguous-pick",
+    "lead": { "source": "email", "name": "Luis Alvarez", "email": "luis.alvarez@mail.example" },
+    "turns": [
+      { "from": "lead", "at": "2026-11-17T23:43:00-07:00", "text": "Hi, our kitchen faucet has been dripping for a few days. Can someone come take a look? We're in 80210." },
+      { "from": "agent", "at": "2026-11-17T23:43:10-07:00", "action": "offer_booking", "offered_slots": ["2026-11-18T08:00:00-07:00", "2026-11-18T10:00:00-07:00", "2026-11-18T13:00:00-07:00"], "text": "Hi Luis, we can take a look. I have Wednesday Nov 18 at 8am, 10am, or 1pm. Which works best?" },
+      { "from": "lead", "at": "2026-11-17T23:45:00-07:00", "text": "Wednesday morning works for me." }
+    ],
+    "expected": { "action": "ask_question", "also_ok": ["offer_booking"], "notes": "Found in the first real email test: two offered slots are in the morning, so ask which." }
+  },
+  {
+    "id": "C09-reschedule",
+    "lead": { "source": "email", "name": "Luis Alvarez", "email": "luis.alvarez@mail.example" },
+    "turns": [
+      { "from": "lead", "at": "2026-11-17T23:43:00-07:00", "text": "Hi, our kitchen faucet has been dripping for a few days. Can someone come take a look? We're in 80210." },
+      { "from": "agent", "at": "2026-11-17T23:43:10-07:00", "action": "offer_booking", "offered_slots": ["2026-11-18T08:00:00-07:00", "2026-11-18T10:00:00-07:00", "2026-11-18T13:00:00-07:00"], "text": "Hi Luis, we can take a look. I have Wednesday Nov 18 at 8am, 10am, or 1pm. Which works best?" },
+      { "from": "lead", "at": "2026-11-17T23:45:00-07:00", "text": "10am please." },
+      { "from": "agent", "at": "2026-11-17T23:45:08-07:00", "action": "confirm_booking", "text": "Great, you're set for Wednesday Nov 18 at 10am. A technician will see you then." },
+      { "from": "lead", "at": "2026-11-17T23:50:00-07:00", "text": "Actually, could we do 8am instead?" }
+    ],
+    "expected": { "action": "confirm_booking", "slot": "2026-11-18T08:00:00-07:00", "notes": "Rescheduling to another offered slot moves the booking." }
   }
 ]
