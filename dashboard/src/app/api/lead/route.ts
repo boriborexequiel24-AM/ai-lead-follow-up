@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { getUsage } from "@/lib/db";
 import { callN8n, clean, fail, overAiCap, visitorHash } from "@/lib/demo";
 import { env } from "@/lib/env";
@@ -46,11 +45,5 @@ export async function POST(request: Request) {
   }
   if (status === 504) return fail(504, "timeout", "The agent is taking longer than usual. Please try again in a minute.");
   if (status === 400) return fail(400, "invalid", String(data.error || "Please check the form."));
-  if (status === 403) {
-    // TEMPORARY while fixing the deploy: length and a one-way fingerprint of the configured secret.
-    const secret = env.n8nWebhookSecret();
-    const hint = { length: secret.length, fingerprint: createHash("sha256").update(secret).digest("hex").slice(0, 8) };
-    return Response.json({ error: "agent_failed", upstream_status: 403, secret_hint: hint }, { status: 502 });
-  }
   return fail(502, "agent_failed", "The agent couldn't answer just now. Please try again in a minute.", status);
 }
