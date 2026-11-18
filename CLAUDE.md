@@ -16,7 +16,7 @@ Planning done, nothing built yet. Full plan in [docs/PLAN.md](docs/PLAN.md).
 | 2. Sample data | Done 2026-11-18: company "Copperline Plumbing & Air" (migration + `supabase/seed.sql`, verified via API: 1 profile, 10 FAQ, 16 prices, public key blocked), 22 labelled leads and 7 conversations in `sample-leads/`. |
 | 3. Agent brain + eval | Done 2026-11-18: prompts and schemas in `agent/`, `scripts/eval_agent.py`. gpt-5.4-mini, 29/29 right actions in two runs, ~$0.003 and ~4.7s per lead turn (docs/agent-eval.md). |
 | 4. Guardrails + conversation loop | Done 2026-11-18: tables (leads, messages, decisions, approvals, slots) and functions in two migrations, 33/33 checks pass (`scripts/test_guardrails.py`). Quiet hours now apply to follow-ups only. |
-| 5. Intake | Done 2026-11-18: n8n workflows "Lead Follow-Up \| 1. Agent turn" (webhook `lead-message`) and "\| 2. Email intake" (every minute), both active. `scripts/test_n8n_agent.py` 10/10; a real labelled email was answered in its Gmail thread in ~9s. Slack posts are plain text for now (buttons in phase 6). |
+| 5. Intake | Done 2026-11-18: n8n workflows "Lead Follow-Up \| 1. Agent turn" (webhook `lead-message`) and "\| 2. Email intake" (every minute), both active. `scripts/test_n8n_agent.py` 10/10; a real labelled email was answered in its Gmail thread in ~9s. Slack posts are plain text for now (buttons in phase 6). First real email test found three bugs (ambiguous slot pick, double booking, wrapped Gmail quote line), all fixed; 35/35 database checks, 31/31 eval, 10/10 live. |
 | 6. Slack | Not started |
 | 7. Follow-ups | Not started |
 | 8. Dashboard | Not started |
