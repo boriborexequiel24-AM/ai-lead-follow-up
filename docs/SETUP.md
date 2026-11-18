@@ -24,6 +24,8 @@ Later migrations in `supabase/migrations/` are run the same way, in name order.
 ## 3. n8n (self-hosted)
 - [ ] Copy `N8N_BASE_URL` and `N8N_API_KEY` from the invoice project's `.env`.
 - [ ] Generate a new long random string for `N8N_WEBHOOK_SECRET`. Don't reuse the invoice one, so each demo can only call its own webhooks.
+- [ ] After the Supabase migrations and the Slack and Gmail steps below, deploy: `python scripts/build_n8n_workflows.py --deploy --activate`. It copies the Supabase, OpenAI and Gmail credentials from the invoice workflows, and creates this project's Slack and webhook-secret credentials from `.env` the first time.
+- [ ] Test: `python scripts/test_n8n_agent.py`, then email a lead from an allow-listed address to the intake inbox and label it `lead-demo`. The reply should arrive in the same thread within about a minute.
 
 ## 4. Slack
 This needs its own Slack app: a Slack app has only one interactivity URL, and the invoice app's already points at the invoice workflow.
