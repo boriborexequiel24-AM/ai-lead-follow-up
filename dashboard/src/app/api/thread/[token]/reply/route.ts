@@ -35,5 +35,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   });
   if (status === 200) return Response.json({ final_action: data.final_action ?? null });
   if (status === 504) return fail(504, "timeout", "The agent is taking longer than usual. Its reply will show up here shortly.");
-  return fail(502, "agent_failed", "The agent couldn't answer just now. Your message is saved; try again in a minute.");
+  return fail(502, "agent_failed", "The agent couldn't answer just now. Your message is saved; try again in a minute.", status);
 }

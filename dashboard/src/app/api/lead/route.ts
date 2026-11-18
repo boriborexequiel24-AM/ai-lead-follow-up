@@ -45,5 +45,5 @@ export async function POST(request: Request) {
   }
   if (status === 504) return fail(504, "timeout", "The agent is taking longer than usual. Please try again in a minute.");
   if (status === 400) return fail(400, "invalid", String(data.error || "Please check the form."));
-  return fail(502, "agent_failed", "The agent couldn't answer just now. Please try again in a minute.");
+  return fail(502, "agent_failed", "The agent couldn't answer just now. Please try again in a minute.", status);
 }

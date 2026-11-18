@@ -11,8 +11,8 @@ export function visitorHash(request: Request): string {
   return createHash("sha256").update(`${env.ipHashSalt()}:${ip}`).digest("hex");
 }
 
-export function fail(status: number, error: string, message: string) {
-  return Response.json({ error, message }, { status });
+export function fail(status: number, error: string, message: string, upstreamStatus?: number) {
+  return Response.json({ error, message, ...(upstreamStatus ? { upstream_status: upstreamStatus } : {}) }, { status });
 }
 
 /** Posts to an n8n webhook. Returns the status and JSON body, or a 504 on timeout. */
@@ -26,8 +26,10 @@ export async function callN8n(path: string, body: Record<string, unknown>, timeo
       cache: "no-store",
     });
     const data = await res.json().catch(() => ({}));
+    if (!res.ok) console.error(`n8n webhook ${path} answered ${res.status}`, JSON.stringify(data).slice(0, 300));
     return { status: res.status, data: data as Record<string, unknown> };
-  } catch {
+  } catch (error) {
+    console.error(`n8n webhook ${path} failed`, error);
     return { status: 504, data: { error: "timeout" } as Record<string, unknown> };
   }
 }

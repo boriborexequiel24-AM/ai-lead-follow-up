@@ -20,5 +20,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   const { status, data } = await callN8n("lead-demo-owner", { token, approved: body.approved }, 25_000);
   if (status === 200 && data.changed) return Response.json({ status: data.status });
   if (status === 200) return fail(409, "already_decided", "That price was already decided.");
-  return fail(502, "failed", "That didn't go through. Please try again.");
+  return fail(502, "failed", "That didn't go through. Please try again.", status);
 }
