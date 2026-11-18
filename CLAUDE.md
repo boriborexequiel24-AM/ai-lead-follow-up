@@ -8,7 +8,7 @@ A portfolio and demo project built by Exequiel to show prospective clients. The 
 **How it must differ from existing work:** Exequiel's portfolio (workwithbori.cloud, workwithzeki.vercel.app) already shows lead routing and CRM sync as n8n/Make/Zapier workflows. This project should not repeat that. The new part is the *agentic follow-up*: the system reads each lead, decides what to do next, writes the message, and keeps following up over days until the lead replies, books, or is closed out.
 
 ## Status
-Phases 1 to 7 done, phase 8 (dashboard) built and tested locally, not deployed yet. Full plan in [docs/PLAN.md](docs/PLAN.md).
+Phases 1 to 8 done and live; phase 9 (polish) is next. Full plan in [docs/PLAN.md](docs/PLAN.md).
 
 | Phase | State |
 |---|---|
