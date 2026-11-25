@@ -50,6 +50,8 @@ const r = $('Resolve approval').first().json;
 if (!r.changed || !r.slack_ts) return [];
 const outcome = r.status === 'approved'
   ? ':white_check_mark: Approved on the demo site by a visitor playing the owner, and sent to their web thread.'
+  : r.status === 'withdrawn'
+  ? ':leftwards_arrow_with_hook: Withdrawn: the conversation moved on before this was decided. Nothing was sent.'
   : ':x: Rejected on the demo site by a visitor playing the owner. Nothing was sent; the lead was handed off.';
 const p = { approval_id: r.approval_id, who: whoLine(r.lead), summary: r.lead.summary, reply: r.reply };
 return [{ json: { body: { channel: config.approvals_channel, ts: r.slack_ts, text: outcome,

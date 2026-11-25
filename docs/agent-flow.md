@@ -74,17 +74,25 @@ When more than one action fits, the order in [sample-leads/README.md](../sample-
 All in the Postgres function `leads.check_decision` (built in phase 4, tested by `scripts/test_guardrails.py`).
 
 **Turn the action into `hand_off`** (the AI's reply is not sent; the customer gets a safe holding message, or the emergency line if it was an emergency):
-- A dollar amount in any reply except a price draft.
-- A price draft whose `price_code` isn't on the sheet, or any amount outside that row's range.
+- An amount of money in any reply except a price draft, with or without a dollar sign ("$89", "89 dollars", "USD 89", "1,400").
+- An emergency reply that doesn't give the emergency line.
+- A follow-up that does anything but offer times, ask a question or close.
+- A price draft whose `price_code` isn't on the sheet, or any amount outside that row's range, including the second half of a range written without its dollar sign.
 - An offered slot that isn't an open, future slot in the slots table (made-up times included), or offer_booking with no slots.
 - A booking for a slot that's taken or was never offered to this lead.
 - An empty reply, or one over 1,500 characters.
 
 **Override the agent:**
-- A clear stop request ("stop", "unsubscribe", "stop emailing me", "remove me from...") closes the lead as `unsubscribed` with no reply. "The water won't stop" doesn't count.
+- A clear stop request ("stop", "unsubscribe", "stop emailing me", "remove me from...") closes the lead as `unsubscribed` with no reply. "The water won't stop" doesn't count. Inside a longer message, an emergency still goes through, and "don't email me, call me" is handed to a person.
 - After the first reply plus 3 follow-ups go unanswered, the lead closes as `no_response`.
 - Unsubscribed leads get nothing, ever. Once a lead is handed off (including emergencies), a person is in charge and the agent stays quiet.
 - Em dashes are replaced with commas.
+
+**Changes while something is waiting** (added after the code review on 2026-11-25):
+- A lead with a visit booked stays `booked` while they ask about other things, and isn't followed up. Cancelling frees the time. Asking for no more messages doesn't cancel the visit; the owner is told in Slack.
+- A follow-up is dropped if the lead replied while it was being written, and one held for quiet hours is withdrawn. If the rules block a follow-up, the owner is told in Slack.
+- A price waiting for approval is withdrawn when the conversation ends, a person takes over, or a newer price replaces it. While one is waiting the lead isn't followed up.
+- An email the agent failed on is tried again up to 3 times, 5 minutes apart, then the owner is asked to answer it (`leads.email_states`).
 
 **Quiet hours (8pm to 8am) apply to follow-ups only** (changed in phase 4). A reply to a message the lead just sent goes out right away, because answering fast is the point. A follow-up that falls in quiet hours is scheduled for 8am.
 

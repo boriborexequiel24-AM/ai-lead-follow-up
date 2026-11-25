@@ -149,7 +149,29 @@ def run_tests() -> list[tuple[str, bool, str]]:
     test("a blocked emergency still gives the emergency line",
          r["final_action"] == "hand_off" and "555-0199" in r["reply"], r["reply"])
 
+    r = check(new_lead(), decision("escalate_emergency", reply="Leave the house now. The owner will call you."))
+    test("an emergency reply without the emergency line is replaced by one that has it",
+         r["final_action"] == "hand_off" and "555-0199" in r["reply"], r)
+    r = check(new_lead(), decision("escalate_emergency", reply="Leave now, then call 303-555-0199."))
+    test("an emergency reply with the line goes out, however it's punctuated", r["final_action"] == "escalate_emergency", r)
+    for text in ("A visit is 89 dollars.", "It's about 1,400 for that.", "Son unos 1400 d\u00f3lares.", "USD 89."):
+        r = check(new_lead(), decision("answer_question", reply=text))
+        test(f"a price without a dollar sign is caught: {text}", r["final_action"] == "hand_off", r["violations"])
+    for text in ("Call (303) 555-0142.", "A 50 gallon tank, with a 1-year warranty.", "Fine for a 2,000 square foot home."):
+        r = check(new_lead(), decision("answer_question", reply=text))
+        test(f"not a price: {text}", r["final_action"] == "answer_question", r["violations"])
+    r = check(new_lead(), {**good_price, "reply": "Usually $1,400 to 9,900."})
+    test("the second half of a price range is checked too", r["final_action"] == "hand_off", r["violations"])
+
     # Stop requests
+    for text in ("Please stop", "Please don\u2019t email me", "stop sending me emails"):
+        r = check(new_lead(text), decision("ask_question"))
+        test(f"a stop request: {text}", r["end_state"] == "unsubscribed" and r["reply"] == "", r)
+    r = check(new_lead("Don't text me, call me, water is coming through the ceiling"),
+              decision("escalate_emergency", reply="Call 303-555-0199 now."))
+    test("an emergency is never cut off by the stop rule", r["final_action"] == "escalate_emergency", r)
+    r = check(new_lead("Please don't email me, call me on 303 555 0111"), decision("ask_question"))
+    test("'don't email me, call me' goes to a person with no message", r["final_action"] == "hand_off" and r["reply"] == "", r)
     lead = new_lead()
     rpc("receive_message", p_source="form", p_channel="web", p_body="please stop emailing me", p_lead_id=lead)
     r = check(lead, decision("offer_booking", offered_slots=slots[:1]))
@@ -181,6 +203,17 @@ def run_tests() -> list[tuple[str, bool, str]]:
     test("after 3 follow-ups the lead is closed as no_response",
          r["final_action"] == "close" and r["end_state"] == "no_response" and r["reply"] == "", r)
 
+    for action in ("draft_price", "answer_question", "confirm_booking"):
+        r = check(new_lead(), decision(action, price_code="water_heater_tank"), trigger="follow_up")
+        test(f"a follow-up cannot use {action}", r["final_action"] == "hand_off" and r["reply"] == "", r)
+    lead = new_lead()
+    apply(lead, decision("offer_booking", offered_slots=slots[:1]))
+    request("PATCH", f"leads?id=eq.{lead}", {"follow_up_claimed_at": "2099-01-01T00:00:00Z"})
+    rpc("receive_message", p_source="form", p_channel="web", p_body="Yes please", p_lead_id=lead)
+    out = apply(lead, decision("offer_booking", offered_slots=slots[:1]), trigger="follow_up")
+    test("a follow-up is dropped if the lead replied while it was being written",
+         out["stale"] and out["message_status"] is None, out)
+
     # The full loop: offer, the lead picks a slot, book it
     lead = new_lead()
     out = apply(lead, decision("offer_booking", offered_slots=slots[:2]))
@@ -205,6 +238,16 @@ def run_tests() -> list[tuple[str, bool, str]]:
     booked = [b["starts_at"] for b in table("slots", f"booked_lead_id=eq.{lead}&select=starts_at")]
     test("picking another offered slot moves the booking (one slot per lead)",
          out["final_action"] == "confirm_booking" and len(booked) == 1 and slots[0] in rpc("open_slots"), (out, booked))
+    for dec in (decision("answer_question"), decision("ask_question"), decision("decline"),
+                decision("offer_booking", offered_slots=slots[2:3])):
+        rpc("receive_message", p_source="form", p_channel="web", p_body="Another question", p_lead_id=lead)
+        apply(lead, dec)
+        row = table("leads", f"id=eq.{lead}&select=status,end_state,awaiting_reply_since")[0]
+        test(f"a booked lead stays booked after {dec['action']}, with no follow-ups",
+             row == {"status": "booked", "end_state": "booked", "awaiting_reply_since": None}, row)
+    rpc("receive_message", p_source="form", p_channel="web", p_body="We don't need it any more", p_lead_id=lead)
+    apply(lead, decision("close", end_state="not_interested"))
+    test("cancelling frees the visit time", not table("slots", f"booked_lead_id=eq.{lead}&select=starts_at"), "")
     r = check(new_lead(), decision("confirm_booking", slot=slots[2]))
     test("booking a slot the lead was never offered becomes hand_off",
          r["final_action"] == "hand_off" and "slot was never offered to this lead" in r["violations"], r["violations"])
@@ -219,6 +262,18 @@ def run_tests() -> list[tuple[str, bool, str]]:
          and approval and approval[0]["status"] == "pending", (out, row))
     context = rpc("get_agent_context", p_lead_id=lead)
     test("an unapproved price is not in the conversation", len(context["conversation"]) == 1, context["conversation"])
+
+    rpc("receive_message", p_source="form", p_channel="web", p_body="What are your hours?", p_lead_id=lead)
+    apply(lead, decision("answer_question"))
+    row = table("leads", f"id=eq.{lead}&select=status,awaiting_reply_since")[0]
+    test("a lead waiting on a price isn't chased for chatting meanwhile",
+         row == {"status": "waiting_approval", "awaiting_reply_since": None}, row)
+    newer = apply(lead, good_price)
+    statuses = [a["status"] for a in table("approvals", f"lead_id=eq.{lead}&select=status&order=id")]
+    test("a newer price withdraws the older one", statuses == ["withdrawn", "pending"], statuses)
+    apply(lead, decision("close", end_state="not_interested"))
+    done = rpc("resolve_approval", p_approval_id=newer["approval_id"], p_approved=True, p_decided_by="test")
+    test("a price is never sent into a conversation that has ended", done["status"] == "withdrawn" and not done.get("send"), done)
 
     # Hand-offs and emergencies stop the agent
     lead = new_lead()
@@ -243,6 +298,16 @@ def run_tests() -> list[tuple[str, bool, str]]:
     again = rpc("receive_message", p_source="email", p_channel="email", p_body="Hi", p_name=TEST_NAME,
                 p_email="x@mail.example", p_external_id=message_id)
     test("the same email message is never processed twice", again == {"duplicate": True}, again)
+    state = lambda: rpc("email_states", p_ids=[message_id, "not-stored"])  # noqa: E731
+    test("an email the agent just started on is busy", state() == [{"external_id": message_id, "state": "busy"}], state())
+    stored = urllib.parse.quote(message_id)
+    request("PATCH", f"messages?external_id=eq.{stored}", {"agent_attempted_at": "2026-01-01T00:00:00Z"})
+    test("an email the agent failed on is due another try", state()[0]["state"] == "retry", state())
+    again = rpc("receive_message", p_source="email", p_channel="email", p_body="Hi", p_name=TEST_NAME,
+                p_email="x@mail.example", p_external_id=message_id)
+    test("the second try continues the same lead", again["duplicate"] is False and again["attempts"] == 2, again)
+    request("PATCH", f"messages?external_id=eq.{stored}", {"agent_attempted_at": "2026-01-01T00:00:00Z", "agent_attempts": 3})
+    test("it gives up after 3 tries", state()[0]["state"] == "done", state())
 
     # Privacy: the public key can't read anything
     anon = urllib.request.Request(

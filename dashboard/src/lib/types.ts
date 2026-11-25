@@ -38,11 +38,11 @@ export type AgentEvent = {
   slot_label: string | null;
   message: {
     body: string;
-    status: "sent" | "scheduled" | "pending_approval" | "rejected";
+    status: "sent" | "scheduled" | "pending_approval" | "rejected" | "withdrawn";
     sent_at: string;
     send_after: string | null;
   } | null;
-  approval: { status: "pending" | "approved" | "rejected"; decided_by: string | null; decided_at: string | null } | null;
+  approval: { status: "pending" | "approved" | "rejected" | "withdrawn"; decided_by: string | null; decided_at: string | null } | null;
 };
 
 export type ThreadEvent = LeadEvent | AgentEvent;

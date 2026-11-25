@@ -10,6 +10,8 @@ Every minute:
        - otherwise: writes a follow-up with agent/follow_up_prompt.md (the
          same file scripts/eval_agent.py tests), runs it through the
          guardrails in leads.apply_decision, and emails it to email leads.
+         A follow-up the lead overtook by replying is dropped; one the rules
+         block goes to the owner in Slack.
 Web leads see their follow-ups in the thread on the dashboard.
 
 Built and deployed by scripts/build_n8n_workflows.py.
@@ -20,7 +22,7 @@ from __future__ import annotations
 import json
 
 from build_n8n_workflows import (
-    AGENT, BUILD_EMAIL_CODE, DECIDE_SCHEMA, IS_TRUE, OUTPUT_TEXT_JS, PREFIX, ROOT,
+    AGENT, BUILD_EMAIL_CODE, DECIDE_SCHEMA, IS_TRUE, OUTPUT_TEXT_JS, PREFIX, ROOT, SLACK_BLOCKS_JS,
     agent_config_code, branch, code, gmail_request, if_node, link, node, openai_request, rpc, slack_post,
 )
 
@@ -82,10 +84,18 @@ PARSE_FOLLOW_UP_CODE = OUTPUT_TEXT_JS + """
 return { json: { decision: outputText($json), facts: $('Build follow-up request').item.json.facts } };"""
 
 
-PLAN_FOLLOW_UP_EMAIL_CODE = """// Email the follow-up if it went out and the lead came in by email.
+PLAN_FOLLOW_UP_EMAIL_CODE = SLACK_BLOCKS_JS + r"""
+// Email the follow-up if it went out and the lead came in by email. If the
+// rules blocked it, the lead is the owner's now, so tell them. A follow-up the
+// lead overtook by replying (stale) needs nothing.
 const config = $('Config').first().json;
 const due = $('Claim follow-ups').item.json;
 const a = $json;
+if (a.final_action === 'hand_off') {
+  const lead = $('Get agent context').item.json.lead;
+  return { json: { kind: 'slack', channel: config.alerts_channel,
+    text: `:raising_hand: *Lead needs you.* ${whoLine(lead)}\nA follow-up was blocked: ${slackText((a.violations || []).join('; '))}. Nothing was sent.` } };
+}
 const to = String(due.email || '').toLowerCase();
 if (a.message_status === 'sent' && a.channel === 'email' && config.allowlist.includes(to)) {
   return { json: { kind: 'email', to, subject: due.subject, reply: a.reply, thread_id: due.thread_id, in_reply_to: null } };
@@ -125,6 +135,8 @@ def build_follow_up_workflow(env: dict) -> dict:
         # Both branches meet here.
         if_node("Email it?", (x(10), y), "={{ $json.kind === 'email' }}", IS_TRUE),
         code("Build email", (x(11), y), BUILD_EMAIL_CODE, per_item=True),
+        if_node("Tell owner?", (x(11), row_close), "={{ $json.kind === 'slack' }}", IS_TRUE),
+        slack_post("Post hand-off", (x(12), row_close), "={{ JSON.stringify({ channel: $json.channel, text: $json.text }) }}"),
         gmail_request("Send email", (x(12), y), "POST",
                       "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
                       body="={{ JSON.stringify($json.send) }}", onError="continueErrorOutput"),
@@ -150,7 +162,8 @@ def build_follow_up_workflow(env: dict) -> dict:
         "Parse follow-up": branch(["Apply follow-up"], ["Alert follow-up failed"]),
         "Apply follow-up": branch(["Plan follow-up email"], ["Alert follow-up failed"]),
         "Plan follow-up email": link("Email it?"),
-        "Email it?": branch(["Build email"], []),
+        "Email it?": branch(["Build email"], ["Tell owner?"]),
+        "Tell owner?": branch(["Post hand-off"], []),
         "Build email": link("Send email"),
         "Send email": branch([], ["Alert email failed"]),
     }

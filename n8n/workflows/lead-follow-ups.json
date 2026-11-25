@@ -310,7 +310,7 @@
         300
       ],
       "parameters": {
-        "jsCode": "// Email the follow-up if it went out and the lead came in by email.\nconst config = $('Config').first().json;\nconst due = $('Claim follow-ups').item.json;\nconst a = $json;\nconst to = String(due.email || '').toLowerCase();\nif (a.message_status === 'sent' && a.channel === 'email' && config.allowlist.includes(to)) {\n  return { json: { kind: 'email', to, subject: due.subject, reply: a.reply, thread_id: due.thread_id, in_reply_to: null } };\n}\nreturn { json: { kind: 'none' } };",
+        "jsCode": "// Slack layout for a price waiting for the owner's approval. Pasted into the\n// n8n Code nodes by scripts/build_n8n_workflows.py, so workflow 1 (posting\n// the draft) and workflow 3 (showing the outcome) always look the same.\n\n// Anything a visitor or the AI wrote. Slack reads <!channel> as a ping and\n// <url|text> as a link, so &, < and > have to be escaped.\nfunction slackText(value) {\n  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\n// Returns text that is already escaped.\nfunction whoLine(lead) {\n  const contact = [lead.email, lead.phone].filter(Boolean).join(', ') || 'no contact';\n  return slackText(`${lead.name || 'Unknown'} (${contact}, zip ${lead.zip || 'unknown'})`).replace(/\\s+/g, ' ');\n}\n\nfunction priceApprovalBlocks(p, outcome) {\n  const quote = text => slackText(text).split('\\n').map(line => '>' + line).join('\\n');\n  const blocks = [\n    { type: 'section', text: { type: 'mrkdwn', text: `:moneybag: *Price waiting for approval*\\n${p.who}\\n${slackText(p.summary)}` } },\n    { type: 'section', text: { type: 'mrkdwn', text: `*Draft reply to the customer*\\n${quote(p.reply)}` } },\n  ];\n  if (outcome) {\n    blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: outcome }] });\n  } else {\n    blocks.push({\n      type: 'actions',\n      elements: [\n        { type: 'button', style: 'primary', action_id: 'approve_price', value: String(p.approval_id),\n          text: { type: 'plain_text', text: 'Approve and send' } },\n        { type: 'button', style: 'danger', action_id: 'reject_price', value: String(p.approval_id),\n          text: { type: 'plain_text', text: 'Reject' },\n          confirm: {\n            title: { type: 'plain_text', text: 'Reject this price?' },\n            text: { type: 'mrkdwn', text: 'Nothing is sent to the customer and the lead is handed to you.' },\n            confirm: { type: 'plain_text', text: 'Reject' },\n            deny: { type: 'plain_text', text: 'Cancel' },\n          } },\n      ],\n    });\n  }\n  return blocks;\n}\n\n// Email the follow-up if it went out and the lead came in by email. If the\n// rules blocked it, the lead is the owner's now, so tell them. A follow-up the\n// lead overtook by replying (stale) needs nothing.\nconst config = $('Config').first().json;\nconst due = $('Claim follow-ups').item.json;\nconst a = $json;\nif (a.final_action === 'hand_off') {\n  const lead = $('Get agent context').item.json.lead;\n  return { json: { kind: 'slack', channel: config.alerts_channel,\n    text: `:raising_hand: *Lead needs you.* ${whoLine(lead)}\\nA follow-up was blocked: ${slackText((a.violations || []).join('; '))}. Nothing was sent.` } };\n}\nconst to = String(due.email || '').toLowerCase();\nif (a.message_status === 'sent' && a.channel === 'email' && config.allowlist.includes(to)) {\n  return { json: { kind: 'email', to, subject: due.subject, reply: a.reply, thread_id: due.thread_id, in_reply_to: null } };\n}\nreturn { json: { kind: 'none' } };",
         "mode": "runOnceForEachItem"
       }
     },
@@ -361,6 +361,61 @@
         "jsCode": "// Build the Gmail message: plain text, UTF-8, in the lead's thread.\nconst config = $('Config').first().json;\nconst item = $json;\nconst b64 = s => Buffer.from(s, 'utf8').toString('base64');\n\nconst base = item.subject || 'Your request';\nconst subject = /^re:/i.test(base) ? base : 'Re: ' + base;\nconst headers = [\n  `From: =?UTF-8?B?${b64(config.company_name + ' (demo)')}?= <${config.intake_address}>`,\n  `To: ${item.to}`,\n  `Subject: =?UTF-8?B?${b64(subject)}?=`,\n  'MIME-Version: 1.0',\n  'Content-Type: text/plain; charset=UTF-8',\n  'Content-Transfer-Encoding: base64',\n];\nif (item.in_reply_to) headers.push(`In-Reply-To: ${item.in_reply_to}`, `References: ${item.in_reply_to}`);\n\nconst text = `${item.reply}\\n\\n${config.email_footer}`;\nconst mime = headers.join('\\r\\n') + '\\r\\n\\r\\n' + b64(text).replace(/(.{76})/g, '$1\\r\\n');\nconst raw = Buffer.from(mime, 'utf8').toString('base64').replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');\n\nreturn { json: { send: item.thread_id ? { raw, threadId: item.thread_id } : { raw } } };",
         "mode": "runOnceForEachItem"
       }
+    },
+    {
+      "id": "dde8a3a7-2724-5659-b3d2-89939b8f7459",
+      "name": "Tell owner?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2420,
+        520
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ef468014-291f-5c76-82e9-17f646fa79a3",
+              "leftValue": "={{ $json.kind === 'slack' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "58fd9e6c-2b61-5dcf-b877-9f148e2fc3c4",
+      "name": "Post hand-off",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        520
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.channel, text: $json.text }) }}",
+        "options": {}
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "id": "616b2588-aec0-54e5-aee8-cf2b75c55bbb",
@@ -599,6 +654,24 @@
         [
           {
             "node": "Build email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tell owner?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tell owner?": {
+      "main": [
+        [
+          {
+            "node": "Post hand-off",
             "type": "main",
             "index": 0
           }

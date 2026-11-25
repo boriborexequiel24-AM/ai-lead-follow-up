@@ -90,12 +90,14 @@ const r = $input.first().json;
 const out = [];
 
 let outcome;
-if (!r.changed) {
+if (r.status === 'withdrawn') {
+  outcome = r.unsubscribed
+    ? `:no_entry: Approved by ${d.user}, but the lead has unsubscribed, so nothing was sent.`
+    : ':leftwards_arrow_with_hook: Withdrawn: the conversation moved on before this was decided. Nothing was sent.';
+} else if (!r.changed) {
   outcome = `:information_source: Already ${r.status}${r.decided_by ? ' by ' + r.decided_by : ''}. No change made.`;
 } else if (!d.approved) {
   outcome = `:x: Rejected by ${d.user}. Nothing was sent; the lead is yours to follow up.`;
-} else if (r.unsubscribed) {
-  outcome = `:no_entry: Approved by ${d.user}, but the lead has unsubscribed, so nothing was sent.`;
 } else if (r.channel === 'email') {
   const to = String(r.lead.email || '').toLowerCase();
   if (config.allowlist.includes(to)) {

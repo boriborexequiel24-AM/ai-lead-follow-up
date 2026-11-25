@@ -60,6 +60,15 @@ function AgentStep({ event, mode, followUp }: { event: AgentEvent; mode: Mode; f
     ) : (
       <span className="italic text-ink-500">The owner will get in touch about the price personally.</span>
     );
+  } else if (msg?.status === "withdrawn") {
+    bubble = owner ? (
+      <>
+        <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink-500">Withdrawn, never sent</span>
+        <span className="text-ink-500 line-through">{msg.body}</span>
+      </>
+    ) : (
+      <span className="italic text-ink-500">Not sent, because the conversation moved on first.</span>
+    );
   } else if (msg?.status === "scheduled") {
     bubble = (
       <>

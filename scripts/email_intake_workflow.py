@@ -27,7 +27,8 @@ from __future__ import annotations
 import json
 
 from build_n8n_workflows import (
-    IS_TRUE, PREFIX, ROOT, branch, code, gmail_request, if_node, link, node, slack_post, supabase_request,
+    IS_TRUE, PREFIX, ROOT, branch, code, gmail_request, if_node, link, node, rpc, slack_escaped,
+    slack_post, supabase_request,
     AGENT_WEBHOOK_PATH,
 )
 
@@ -86,10 +87,15 @@ for (const m of recent) {
 return out;  // nothing to do means no items, and the run stops here"""
 
 
-NEW_ONLY_CODE = """// Skip messages the agent already has. A labelled one that's already in only
-// needs its label taken off (an earlier run must have failed after handing it over).
-const done = new Set(($input.all() || []).map(i => i.json.external_id).filter(Boolean));
-return $('Candidates').all().map(i => ({ json: { ...i.json, already_in: done.has(i.json.id) } }));"""
+NEW_ONLY_CODE = """// Sort by what leads.email_states says about messages already stored:
+//   done   only needs its label taken off
+//   busy   the agent is on it now, so leave it alone this time
+//   retry  the agent failed on it and it's time to try again
+// Anything not listed is new.
+const state = new Map(($input.all() || []).filter(i => i.json.external_id).map(i => [i.json.external_id, i.json.state]));
+return $('Candidates').all()
+  .filter(i => state.get(i.json.id) !== 'busy')
+  .map(i => ({ json: { ...i.json, already_in: state.get(i.json.id) === 'done' } }));"""
 
 
 PARSE_EMAIL_CODE = r"""// Turn a Gmail message into a lead message: sender, subject, plain-text body
@@ -147,10 +153,13 @@ return {
 };"""
 
 
-SUMMARIZE_CODE = """// What happened to this message. 200 means the agent has it.
+SUMMARIZE_CODE = """// What happened to this message. 200 means the agent has dealt with it, unless
+// another run got to it first: then that run decides, and there's nothing to report.
 const src = $('Parse email').item.json;
-return { json: { id: src.id, labelled: src.labelled, from: src.payload.email, status: $json.statusCode,
-                 ok: $json.statusCode === 200, final_action: $json.body?.final_action ?? null } };"""
+const duplicate = $json.body?.duplicate === true;
+const ok = $json.statusCode === 200 && !duplicate;
+return { json: { id: src.id, labelled: src.labelled, from: src.payload.email, status: $json.statusCode ?? 'no answer',
+                 ok, failed: !ok && !duplicate, gave_up: ($json.body?.attempts ?? 0) >= 3, final_action: $json.body?.final_action ?? null } };"""
 
 
 def build_email_intake_workflow(env: dict) -> dict:
@@ -179,12 +188,9 @@ def build_email_intake_workflow(env: dict) -> dict:
                       f"={GMAIL_API}/messages?maxResults=50&q={{{{ encodeURIComponent({json.dumps(REPLY_SEARCH)}) }}}}",
                       executeOnce=True),
         code("Candidates", (x(9), y), CANDIDATES_CODE),
-        supabase_request(
-            "Already in?", (x(10), y), "GET",
-            "/rest/v1/messages?select=external_id"
-            "&external_id=in.({{ $('Candidates').all().map(i => i.json.id).join(',') }})",
-            alwaysOutputData=True, executeOnce=True,
-        ),
+        rpc("Already in?", (x(10), y), "email_states",
+            "={{ JSON.stringify({ p_ids: $('Candidates').all().map(i => i.json.id) }) }}",
+            alwaysOutputData=True, executeOnce=True),
         code("New only", (x(11), y), NEW_ONLY_CODE),
         if_node("Already in agent?", (x(12), y), "={{ $json.already_in }}", IS_TRUE),
         gmail_request("Get message", (x(13), y), "GET", f"={GMAIL_API}/messages/{{{{ $json.id }}}}?format=full"),
@@ -202,19 +208,21 @@ def build_email_intake_workflow(env: dict) -> dict:
             "jsonBody": "={{ JSON.stringify($json.payload) }}",
             "options": {"timeout": 120000, "response": {"response": {"fullResponse": True, "neverError": True}}},
         # No retryOnFail: it would run the agent (two paid AI calls) more than once.
-        # A labelled message keeps its label after a failure, which is the retry.
-        }),
+        # leads.email_states decides when a failed message is tried again.
+        }, onError="continueRegularOutput"),
         code("Summarize", (x(17), y), SUMMARIZE_CODE, per_item=True),
         if_node("Agent has it?", (x(18), y), "={{ $json.ok }}", IS_TRUE),
         if_node("Labelled?", (x(19), y), "={{ $json.labelled }}", IS_TRUE),
         gmail_request("Take label off", (x(20), y), "POST", f"={GMAIL_API}/messages/{{{{ $json.id }}}}/modify",
                       body="={{ JSON.stringify({ removeLabelIds: [" + label_id + "] }) }}",
                       onError="continueRegularOutput"),
-        slack_post("Alert team", (x(19), row2),
+        if_node("Failed?", (x(19), row2), "={{ $json.failed }}", IS_TRUE),
+        slack_post("Alert team", (x(20), row2),
                    "={{ JSON.stringify({ channel: $('Config').first().json.alerts_channel, "
-                   "text: ':warning: An email from ' + ($json.from || 'unknown sender') + "
-                   "' could not be handed to the agent (status ' + $json.status + '). "
-                   "If it was labelled it keeps the label and will be retried.' }) }}"),
+                   "text: ':warning: The agent could not answer an email from ' + "
+                   + slack_escaped("$json.from || 'unknown sender'") + " + ' (status ' + $json.status + '). ' + "
+                   "($json.gave_up ? 'That was the third try, so please answer this one yourself.' "
+                   ": 'It will be tried again in a few minutes.') }) }}"),
     ]
 
     connections = {
@@ -236,7 +244,8 @@ def build_email_intake_workflow(env: dict) -> dict:
         "Skip?": branch(["Labelled?"], ["Send to agent"]),
         "Send to agent": link("Summarize"),
         "Summarize": link("Agent has it?"),
-        "Agent has it?": branch(["Labelled?"], ["Alert team"]),
+        "Agent has it?": branch(["Labelled?"], ["Failed?"]),
+        "Failed?": branch(["Alert team"], []),
         "Labelled?": branch(["Take label off"], []),
     }
     return {

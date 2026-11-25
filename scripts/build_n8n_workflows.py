@@ -144,6 +144,11 @@ def slack_post(name: str, position, body: str, **extra) -> dict:
     }, onError="continueRegularOutput", **extra)
 
 
+def slack_escaped(js: str) -> str:
+    """An n8n expression for text someone else wrote, safe to post to Slack (see slackText in slack_blocks.js)."""
+    return f"String({js}).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')"
+
+
 def gmail_request(name: str, position, method: str, url: str, body: str | None = None, **extra) -> dict:
     params = {
         "method": method,
@@ -370,20 +375,27 @@ if (applied.message_status === 'sent' && applied.channel === 'email') {
                        thread_id: input.email_thread_id, in_reply_to: input.in_reply_to } });
   } else {
     out.push({ json: { kind: 'slack', channel: config.alerts_channel,
-      text: `:no_entry: Reply to ${to} was not emailed: the address isn't on OUTBOUND_EMAIL_ALLOWLIST.` } });
+      text: `:no_entry: Reply to ${slackText(to)} was not emailed: the address isn't on OUTBOUND_EMAIL_ALLOWLIST.` } });
   }
 }
 
 if (applied.final_action === 'escalate_emergency') {
   out.push({ json: { kind: 'slack', channel: config.alerts_channel,
-    text: `:rotating_light: *Emergency lead: call now.* ${who}\n${facts.summary}\n${applied.owner_note || ''}` } });
+    text: `:rotating_light: *Emergency lead: call now.* ${who}\n${slackText(facts.summary)}\n${slackText(applied.owner_note)}` } });
 }
 if (applied.final_action === 'hand_off') {
   const why = (applied.violations || []).length
     ? `The agent's reply was blocked: ${applied.violations.join('; ')}.`
     : (applied.owner_note || parsed.decision.reason);
+  // An emergency whose reply was blocked is still an emergency.
+  const title = parsed.decision.action === 'escalate_emergency'
+    ? ':rotating_light: *Emergency lead: call now.*' : ':raising_hand: *Lead needs you.*';
   out.push({ json: { kind: 'slack', channel: config.alerts_channel,
-    text: `:raising_hand: *Lead needs you.* ${who}\n${facts.summary}\n${why}` } });
+    text: `${title} ${who}\n${slackText(facts.summary)}\n${slackText(why)}` } });
+}
+if (applied.end_state === 'unsubscribed' && applied.booked_slot) {
+  out.push({ json: { kind: 'slack', channel: config.alerts_channel,
+    text: `:no_bell: *A lead asked for no more messages but still has a visit booked:* ${who}\n${applied.booked_slot}. Check if they still want it.` } });
 }
 if (applied.approval_id) {
   const p = { approval_id: applied.approval_id, who, summary: facts.summary, reply: applied.reply };
@@ -448,8 +460,8 @@ def build_agent_workflow(env: dict) -> dict:
         slack_post("Tell owner they wrote", (x(9), row2),
                    "={{ JSON.stringify({ channel: $('Config').first().json.alerts_channel, "
                    "text: ':speech_balloon: A lead you took over wrote again (' + "
-                   "($('Validate input').first().json.params.p_email || 'web thread') + '):\\n> ' + "
-                   "$('Validate input').first().json.params.p_body.slice(0, 500) }) }}"),
+                   + slack_escaped("$('Validate input').first().json.params.p_email || 'web thread'") + " + '):\\n> ' + "
+                   + slack_escaped("$('Validate input').first().json.params.p_body.slice(0, 500)") + " }) }}"),
         rpc("Get agent context", (x(8), y), "get_agent_context",
             "={{ JSON.stringify({ p_lead_id: " + lead_id + " }) }}"),
         code("Build read request", (x(9), y), build_read_code()),
@@ -491,10 +503,11 @@ def build_agent_workflow(env: dict) -> dict:
         slack_post("Alert agent failed", (x(13), row3),
                    "={{ JSON.stringify({ channel: $('Config').first().json.alerts_channel, "
                    "text: ':warning: The agent could not answer a lead (' + "
-                   "($('Validate input').first().json.params.p_email || 'web thread') + '). The message is saved; "
-                   "nothing was sent. Error: ' + String($json.error?.message ?? $json.error ?? 'unknown error').slice(0, 300) }) }}"),
+                   + slack_escaped("$('Validate input').first().json.params.p_email || 'web thread'")
+                   + " + '). The message is saved; nothing was sent. Error: ' + String($json.error?.message ?? $json.error ?? 'unknown error').slice(0, 300) }) }}"),
         respond("Reply failed", (x(14), row3), 502,
-                "={{ { error: 'agent_failed', lead_id: " + lead_id + " } }}"),
+                "={{ { error: 'agent_failed', lead_id: " + lead_id + ", "
+                "attempts: $('Receive message').first().json.attempts } }}"),
     ]
 
     connections = {

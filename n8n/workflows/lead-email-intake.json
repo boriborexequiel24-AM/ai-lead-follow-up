@@ -192,8 +192,8 @@
         300
       ],
       "parameters": {
-        "method": "GET",
-        "url": "={{ $('Config').first().json.supabase_url }}/rest/v1/messages?select=external_id&external_id=in.({{ $('Candidates').all().map(i => i.json.id).join(',') }})",
+        "method": "POST",
+        "url": "={{ $('Config').first().json.supabase_url }}/rest/v1/rpc/email_states",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
         "sendHeaders": true,
@@ -209,7 +209,10 @@
             }
           ]
         },
-        "options": {}
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_ids: $('Candidates').all().map(i => i.json.id) }) }}"
       },
       "alwaysOutputData": true,
       "executeOnce": true
@@ -224,7 +227,7 @@
         300
       ],
       "parameters": {
-        "jsCode": "// Skip messages the agent already has. A labelled one that's already in only\n// needs its label taken off (an earlier run must have failed after handing it over).\nconst done = new Set(($input.all() || []).map(i => i.json.external_id).filter(Boolean));\nreturn $('Candidates').all().map(i => ({ json: { ...i.json, already_in: done.has(i.json.id) } }));"
+        "jsCode": "// Sort by what leads.email_states says about messages already stored:\n//   done   only needs its label taken off\n//   busy   the agent is on it now, so leave it alone this time\n//   retry  the agent failed on it and it's time to try again\n// Anything not listed is new.\nconst state = new Map(($input.all() || []).filter(i => i.json.external_id).map(i => [i.json.external_id, i.json.state]));\nreturn $('Candidates').all()\n  .filter(i => state.get(i.json.id) !== 'busy')\n  .map(i => ({ json: { ...i.json, already_in: state.get(i.json.id) === 'done' } }));"
       }
     },
     {
@@ -361,7 +364,8 @@
             }
           }
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "id": "224b73ab-d733-5264-a196-e89b9e22d17c",
@@ -373,7 +377,7 @@
         300
       ],
       "parameters": {
-        "jsCode": "// What happened to this message. 200 means the agent has it.\nconst src = $('Parse email').item.json;\nreturn { json: { id: src.id, labelled: src.labelled, from: src.payload.email, status: $json.statusCode,\n                 ok: $json.statusCode === 200, final_action: $json.body?.final_action ?? null } };",
+        "jsCode": "// What happened to this message. 200 means the agent has dealt with it, unless\n// another run got to it first: then that run decides, and there's nothing to report.\nconst src = $('Parse email').item.json;\nconst duplicate = $json.body?.duplicate === true;\nconst ok = $json.statusCode === 200 && !duplicate;\nreturn { json: { id: src.id, labelled: src.labelled, from: src.payload.email, status: $json.statusCode ?? 'no answer',\n                 ok, failed: !ok && !duplicate, gave_up: ($json.body?.attempts ?? 0) >= 3, final_action: $json.body?.final_action ?? null } };",
         "mode": "runOnceForEachItem"
       }
     },
@@ -469,12 +473,46 @@
       "onError": "continueRegularOutput"
     },
     {
+      "id": "317509df-1b4b-5842-a148-21aab33888b5",
+      "name": "Failed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4180,
+        520
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1d7531f0-de31-52b6-9892-42bf94a29823",
+              "leftValue": "={{ $json.failed }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
       "id": "613bb0fa-1ad6-57a5-ae95-c88fca5b675c",
       "name": "Alert team",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        4180,
+        4400,
         520
       ],
       "parameters": {
@@ -484,7 +522,7 @@
         "nodeCredentialType": "slackApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ channel: $('Config').first().json.alerts_channel, text: ':warning: An email from ' + ($json.from || 'unknown sender') + ' could not be handed to the agent (status ' + $json.status + '). If it was labelled it keeps the label and will be retried.' }) }}",
+        "jsonBody": "={{ JSON.stringify({ channel: $('Config').first().json.alerts_channel, text: ':warning: The agent could not answer an email from ' + String($json.from || 'unknown sender').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + ' (status ' + $json.status + '). ' + ($json.gave_up ? 'That was the third try, so please answer this one yourself.' : 'It will be tried again in a few minutes.') }) }}",
         "options": {}
       },
       "onError": "continueRegularOutput"
@@ -714,11 +752,23 @@
         ],
         [
           {
-            "node": "Alert team",
+            "node": "Failed?",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "Failed?": {
+      "main": [
+        [
+          {
+            "node": "Alert team",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     },
     "Labelled?": {
