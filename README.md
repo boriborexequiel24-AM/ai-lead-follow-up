@@ -57,8 +57,8 @@ Open a lead to see every decision, the reason behind it, notes for the owner and
 
 ## Tested, not just demoed
 - **The AI is measured against an answer key.** 35 labelled cases (22 single leads, 9 conversations, 4 follow-ups) include a gas smell, an out-of-area zip, a vendor pitch, a price hidden in a long email, an attempt to talk the agent into a discount, a reply in Spanish and an ambiguous "Wednesday morning works". The chosen model, gpt-5.4-mini, gets all 35 right at about $0.003 and 5 seconds per lead turn. See [docs/agent-eval.md](docs/agent-eval.md).
-- **Testing found real bugs, and each one became a test:** a made-up visit time, a wrong weekday in a Spanish follow-up, a second booking when a lead picked another time, quoted email text read as part of the reply, and follow-ups arriving late because a lock was never released.
-- **37 guardrail checks** run against the database functions directly.
+- **Testing found real bugs, and each one became a test:** a made-up visit time, a wrong weekday in a Spanish follow-up, a second booking when a lead picked another time, quoted email text read as part of the reply, follow-ups arriving late because a lock was never released, and a booked customer being chased after asking about the warranty.
+- **68 guardrail checks** run against the database functions directly.
 - **End-to-end tests** run on the live system: the agent workflow (10 checks), Slack approvals with signed fake clicks (7), and the follow-up scheduler and cleanup (8).
 
 ## Built with
